@@ -62,8 +62,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if (Test-Path -LiteralPath $ghExe) {
-    & $ghExe auth status 2>$null
-    if ($LASTEXITCODE -eq 0) {
+    $ghAuthOk = $false
+    try {
+        & $ghExe auth status 2>&1 | Out-Null
+        $ghAuthOk = ($LASTEXITCODE -eq 0)
+    } catch { $ghAuthOk = $false }
+    if ($ghAuthOk) {
         if (-not (Test-Path -LiteralPath ".git\refs\remotes\origin\main")) {
             if ($Visibility -eq "private") {
                 & $ghExe repo create $RepoName --private --source=. --remote=origin --push
