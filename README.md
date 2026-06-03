@@ -21,7 +21,14 @@ Pacote Cursor para **mapear APIs** em qualquer codebase e gerar **documentação
 $desk = [Environment]::GetFolderPath("Desktop")
 Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
 
-python scripts\scan-apis.py --root "C:\caminho\do\projeto" --out docs
+# Se nao tiver Python: .\INSTALAR-PYTHON.cmd (feche e abra o terminal depois)
+.\ESCANEAR.cmd "C:\caminho\do\projeto"
+```
+
+Ou manualmente (com Python no PATH):
+
+```powershell
+py -3 scripts\scan-apis.py --root "C:\caminho\do\projeto" --out "C:\caminho\do\projeto\docs"
 ```
 
 Saída: `docs/api-inventory.json` + `docs/SYSTEM-API-DOCUMENTATION.md`
