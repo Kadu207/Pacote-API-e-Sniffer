@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", "vendor", "__pycache__",
@@ -30,7 +30,10 @@ CODE_EXT = {
 OPENAPI_NAMES = {"openapi.yaml", "openapi.yml", "openapi.json", "swagger.yaml", "swagger.json"}
 
 ROUTE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("express", re.compile(r"\b(?:app|router)\.(get|post|put|patch|delete|all)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
+    ("express", re.compile(
+        r"\b(?:app|router|\w+Router)\.(get|post|put|patch|delete|all)\s*\(\s*['\"`]([^'\"`]+)",
+        re.I,
+    )),
     ("fastify", re.compile(r"\bfastify\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("hono", re.compile(r"\bapp\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("nestjs", re.compile(r"@(Get|Post|Put|Patch|Delete)\s*\(\s*['\"`]([^'\"`]*)['\"`]?", re.I)),
@@ -42,6 +45,11 @@ ROUTE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("go_http", re.compile(r"http\.HandleFunc\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("laravel", re.compile(r"Route::(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
 ]
+
+MOUNT_RE = re.compile(
+    r"\bapp\.use\s*\(\s*['\"`]([^'\"`]+)['\"`]\s*,\s*(\w+)",
+    re.I,
+)
 
 CLIENT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("fetch_url", re.compile(r"fetch\s*\(\s*['\"`](https?://[^'\"`]+)", re.I)),
@@ -142,6 +150,22 @@ def scan_openapi_file(path: Path, root: Path, hits: list[ApiHit]) -> None:
         hits.append(ApiHit("openapi", "", m.group(1), rel, 0, framework="openapi-path"))
 
 
+def scan_mounts(text: str, rel: str, hits: list[ApiHit]) -> None:
+    for m in MOUNT_RE.finditer(text):
+        prefix, router = m.group(1), m.group(2)
+        hits.append(
+            ApiHit(
+                "mount",
+                "",
+                prefix.rstrip("/"),
+                rel,
+                0,
+                framework="express-mount",
+                note=f"router={router}",
+            )
+        )
+
+
 def scan_file(path: Path, root: Path, hits: list[ApiHit], warnings: list[str]) -> None:
     rel = str(path.relative_to(root)).replace("\\", "/")
 
@@ -158,6 +182,8 @@ def scan_file(path: Path, root: Path, hits: list[ApiHit], warnings: list[str]) -
 
     if path.suffix in {".graphql", ".gql"}:
         hits.append(ApiHit("graphql", "", rel, rel, 0, note="schema file"))
+
+    scan_mounts(text, rel, hits)
 
     for i, line in enumerate(text.splitlines(), 1):
         for fw, pat in ROUTE_PATTERNS:
@@ -190,6 +216,7 @@ def dedupe_hits(hits: list[ApiHit]) -> list[ApiHit]:
 
 
 def render_markdown(result: ScanResult) -> str:
+    mounts = [h for h in result.hits if h.kind == "mount"]
     routes = [h for h in result.hits if h.kind == "route"]
     clients = [h for h in result.hits if h.kind == "client"]
     specs = [h for h in result.hits if h.kind == "openapi"]
@@ -207,12 +234,27 @@ def render_markdown(result: ScanResult) -> str:
         "",
         "| Tipo | Quantidade |",
         "|------|------------|",
+        f"| Prefixos montados (app.use) | {len(mounts)} |",
         f"| Rotas no código | {len(routes)} |",
         f"| OpenAPI (arquivos + paths) | {len(specs)} |",
         f"| Clientes / URLs / env | {len(clients)} |",
         f"| GraphQL | {len(gql)} |",
         "",
+        "## Prefixos de API (app.use)",
+        "",
+        "| Prefixo | Router | Arquivo |",
+        "|---------|--------|---------|",
+    ]
+    for h in sorted(mounts, key=lambda x: x.path):
+        lines.append(f"| `{h.path}` | {h.note or '—'} | `{h.file}` |")
+    if not mounts:
+        lines.append("| — | *Nenhum* | — |")
+
+    lines += [
+        "",
         "## APIs expostas (rotas)",
+        "",
+        "> Rotas em arquivos de router são relativas ao prefixo do `app.use` no index.",
         "",
         "| Método | Caminho | Framework | Arquivo | Linha |",
         "|--------|---------|-----------|---------|-------|",
@@ -311,6 +353,7 @@ def main() -> None:
             "clients": sum(1 for h in result.hits if h.kind == "client"),
             "openapi": sum(1 for h in result.hits if h.kind == "openapi"),
             "graphql": sum(1 for h in result.hits if h.kind == "graphql"),
+            "mounts": sum(1 for h in result.hits if h.kind == "mount"),
         },
         "hits": [asdict(h) for h in result.hits],
     }
