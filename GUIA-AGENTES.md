@@ -30,9 +30,15 @@ Use sniff-system-apis. Execute scan-apis.py na raiz deste repo. Gere docs/SYSTEM
 ## Git / push / validar
 
 ```powershell
-. .\scripts\git-env.ps1
-.\VALIDAR.ps1
-powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: minha alteracao"
+VALIDAR.cmd
+PUSH.cmd
+```
+
+Ou no PowerShell (politica de scripts bloqueada):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\VALIDAR.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: minha alteracao"
 ```
 
 Mais detalhes: [README.md](README.md), [CHANGELOG.md](CHANGELOG.md)

@@ -5,11 +5,13 @@ Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
 === GIT NA SESSAO ===
 . .\scripts\git-env.ps1
 
-=== VALIDAR ===
-.\VALIDAR.ps1
+=== VALIDAR (se .\VALIDAR.ps1 der erro de politica, use um destes) ===
+VALIDAR.cmd
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\VALIDAR.ps1"
 
 === COMMIT + PUSH ===
-powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: melhorias v1.1.0"
+PUSH.cmd
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: melhorias v1.1.0"
 
 === PUSH MANUAL ===
 $git = "${env:ProgramFiles}\Git\bin\git.exe"
