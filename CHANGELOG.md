@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0] - 2026-06-03
+
+### Melhorias
+
+- Site estático `docs/api-catalog/index.html` (busca de endpoints, tabelas)
+- `GUIA-MULTI-AGENTES.md` — fluxo 4 agentes (descoberta, enriquecimento, validação, publicação)
+- `PUBLICAR-WEB.md` — GitHub Pages, Cloudflare, qualquer PC
+
 ## [1.3.1] - 2026-06-03
 
 ### Melhorias

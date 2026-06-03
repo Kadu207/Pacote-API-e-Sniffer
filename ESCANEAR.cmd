@@ -35,4 +35,5 @@ exit /b 1
 if errorlevel 1 exit /b 1
 echo.
 echo Documentacao em: %OUT%
+echo Site local: %OUT%\api-catalog\index.html
 pause

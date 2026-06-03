@@ -61,6 +61,7 @@ Não altere código fora de docs/ salvo pedido explícito.
 |----------|----------|
 | `SYSTEM-API-DOCUMENTATION.md` | Tabela **Caminho completo** (ex. `GET /api/clientes/:id`) |
 | `api-inventory.json` | `path` (relativo no router), `path_full`, `router_var`, mounts com `note: router=...` |
+| `api-catalog/index.html` | Catálogo navegável (publicar no site) |
 
 Template manual (complemento): `templates/SYSTEM-DOCUMENTATION.template.md` — a saída automática é `SYSTEM-API-DOCUMENTATION.md`.
 
@@ -85,6 +86,11 @@ Git na sessão (sem alterar PATH permanente):
 ```
 
 Para PATH permanente, prefira adicionar Git nas Configurações do Windows; evite `setx PATH` com `%PATH%` inteiro (pode truncar).
+
+## Multi-agente + site na web
+
+- [GUIA-MULTI-AGENTES.md](GUIA-MULTI-AGENTES.md) — 4 papéis (descoberta → enriquecimento → validação → publicação)
+- [PUBLICAR-WEB.md](PUBLICAR-WEB.md) — GitHub Pages, domínio próprio, outro PC
 
 ## Documentação relacionada
 

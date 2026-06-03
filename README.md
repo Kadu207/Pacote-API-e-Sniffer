@@ -11,7 +11,7 @@ Pacote Cursor para **mapear APIs** em qualquer codebase e gerar **documentação
 | Pasta / arquivo | Função |
 |-----------------|--------|
 | `.cursor/skills/sniff-system-apis/` | Skill do Agent |
-| `scripts/scan-apis.py` | Scanner (v1.3.1) |
+| `scripts/scan-apis.py` | Scanner (v1.4.0) |
 | `scripts/git-env.ps1` | Git no PATH da sessão |
 | `ESCANEAR.cmd` | Scan com Python do AppData |
 | `INSTALAR-PYTHON.cmd` | Instala Python 3.12 via winget |
@@ -19,6 +19,8 @@ Pacote Cursor para **mapear APIs** em qualquer codebase e gerar **documentação
 | `VALIDAR.ps1` / `VALIDAR.cmd` | Checagem local/remoto + smoke |
 | `PUSH-GITHUB.ps1` / `PUSH.cmd` | Commit + push deste pacote |
 | `GUIA-AGENTES.md` | Uso no Cursor (agentes) |
+| `GUIA-MULTI-AGENTES.md` | 4 agentes: coleta, enriquecimento, validação, web |
+| `PUBLICAR-WEB.md` | Publicar catálogo no seu site |
 | `templates/` | Template manual complementar |
 
 ## Início rápido
@@ -45,6 +47,7 @@ Em `{seu-projeto}/docs/`:
 
 - `api-inventory.json` — `path_full`, `router_var`, mounts (`kind: mount`)
 - `SYSTEM-API-DOCUMENTATION.md` — tabelas **Prefixos de API** e **Caminho completo** (`GET /api/...`)
+- `api-catalog/index.html` — **site** com busca (abra no navegador ou publique na web)
 
 ## Cursor Agent
 

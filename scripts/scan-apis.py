@@ -7,6 +7,7 @@ Uso: python scan-apis.py --root PATH --out docs
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 from dataclasses import asdict, dataclass, field
@@ -14,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", "vendor", "__pycache__",
@@ -368,6 +369,110 @@ def render_markdown(result: ScanResult) -> str:
     return "\n".join(lines)
 
 
+def render_html(result: ScanResult) -> str:
+    mounts = sorted(
+        [h for h in result.hits if h.kind == "mount"],
+        key=lambda x: x.path,
+    )
+    routes = sorted(
+        [h for h in result.hits if h.kind == "route"],
+        key=lambda x: (x.path_full or x.path, x.method),
+    )
+    clients = sorted(
+        [h for h in result.hits if h.kind == "client"],
+        key=lambda x: (x.path, x.file),
+    )
+    name = html.escape(Path(result.root).name)
+    stacks = html.escape(", ".join(result.stacks) or "n/d")
+    scanned = html.escape(result.scanned_at)
+    version = html.escape(result.scanner_version)
+
+    mount_rows = "\n".join(
+        f"<tr><td><code>{html.escape(h.path)}</code></td>"
+        f"<td>{html.escape(h.note.replace('router=', '') if h.note else '—')}</td>"
+        f"<td><code>{html.escape(h.file)}</code></td><td>{h.line}</td></tr>"
+        for h in mounts
+    ) or '<tr><td colspan="4">Nenhum prefixo detectado</td></tr>'
+
+    route_rows = "\n".join(
+        f'<tr data-method="{html.escape(h.method)}" data-path="{html.escape((h.path_full or h.path).lower())}">'
+        f"<td><strong>{html.escape(h.method)}</strong></td>"
+        f"<td><code>{html.escape(h.path_full or h.path)}</code></td>"
+        f"<td>{html.escape(h.router_var or 'app')}</td>"
+        f"<td><code>{html.escape(h.file)}</code></td><td>{h.line}</td></tr>"
+        for h in routes
+    ) or '<tr><td colspan="5">Nenhuma rota detectada</td></tr>'
+
+    client_rows = "\n".join(
+        f"<tr><td><code>{html.escape(h.path)}</code></td>"
+        f"<td>{html.escape(h.framework)}</td>"
+        f"<td><code>{html.escape(h.file)}</code></td><td>{h.line}</td></tr>"
+        for h in clients
+    ) or '<tr><td colspan="4">Nenhum cliente HTTP detectado</td></tr>'
+
+    warn_block = ""
+    if result.warnings:
+        items = "".join(f"<li>{html.escape(w)}</li>" for w in result.warnings[:20])
+        warn_block = f'<section class="warn"><h2>Alertas</h2><ul>{items}</ul></section>'
+
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API — {name}</title>
+<style>
+:root {{ font-family: system-ui, sans-serif; color: #1a1a1a; background: #f6f8fa; }}
+body {{ max-width: 1100px; margin: 0 auto; padding: 1.5rem; }}
+h1 {{ margin-bottom: 0.25rem; }}
+.meta {{ color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }}
+input#q {{ width: 100%; padding: 0.6rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }}
+section {{ background: #fff; border-radius: 8px; padding: 1rem; margin: 1rem 0; box-shadow: 0 1px 3px #0001; }}
+table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
+th, td {{ text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid #eee; }}
+th {{ background: #f0f3f6; }}
+code {{ font-size: 0.85em; }}
+.warn {{ border-left: 4px solid #d97706; }}
+.hidden {{ display: none; }}
+</style>
+</head>
+<body>
+<h1>Catálogo de APIs — {name}</h1>
+<p class="meta">Scanner v{version} · {scanned} · Stacks: {stacks}<br>Raiz: <code>{html.escape(result.root)}</code></p>
+<label for="q">Buscar endpoint (método ou caminho)</label>
+<input id="q" type="search" placeholder="Ex.: GET /api/clientes" autocomplete="off">
+<section>
+<h2>Prefixos (app.use)</h2>
+<table><thead><tr><th>Prefixo</th><th>Router</th><th>Arquivo</th><th>Linha</th></tr></thead>
+<tbody>{mount_rows}</tbody></table>
+</section>
+<section>
+<h2>Endpoints ({len(routes)})</h2>
+<table id="routes"><thead><tr><th>Método</th><th>Caminho</th><th>Router</th><th>Arquivo</th><th>Linha</th></tr></thead>
+<tbody>{route_rows}</tbody></table>
+</section>
+<section>
+<h2>Integrações HTTP ({len(clients)})</h2>
+<table><thead><tr><th>URL / variável</th><th>Tipo</th><th>Arquivo</th><th>Linha</th></tr></thead>
+<tbody>{client_rows}</tbody></table>
+</section>
+{warn_block}
+<p class="meta">Arquivos irmãos: <code>api-inventory.json</code>, <code>SYSTEM-API-DOCUMENTATION.md</code></p>
+<script>
+const q = document.getElementById('q');
+const rows = document.querySelectorAll('#routes tbody tr[data-path]');
+q.addEventListener('input', () => {{
+  const t = q.value.trim().toLowerCase();
+  rows.forEach(r => {{
+    const text = (r.dataset.method + ' ' + r.dataset.path).toLowerCase();
+    r.classList.toggle('hidden', t && !text.includes(t));
+  }});
+}});
+</script>
+</body>
+</html>"""
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Mapeia APIs em um repositório")
     ap.add_argument("--root", required=True, help="Pasta raiz do sistema")
@@ -419,8 +524,14 @@ def main() -> None:
     inv_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     doc_path.write_text(render_markdown(result), encoding="utf-8")
 
+    site_dir = out_dir / "api-catalog"
+    site_dir.mkdir(parents=True, exist_ok=True)
+    site_path = site_dir / "index.html"
+    site_path.write_text(render_html(result), encoding="utf-8")
+
     print(f"OK: {inv_path}")
     print(f"OK: {doc_path}")
+    print(f"OK: {site_path}")
     c = payload["counts"]
     print(f"Rotas: {c['routes']} | OpenAPI: {c['openapi']} | Clientes: {c['clients']} | Alertas: {len(result.warnings)}")
 
