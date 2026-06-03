@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: "0 12 * * 1"
+
+jobs:
+  lint-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax check scanner
+        run: python -m py_compile scripts/scan-apis.py
+      - name: Smoke scan (self)
+        run: |
+          python scripts/scan-apis.py --root . --out /tmp/sniffer-out
+          test -f /tmp/sniffer-out/api-inventory.json
+          test -f /tmp/sniffer-out/SYSTEM-API-DOCUMENTATION.md

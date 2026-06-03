@@ -1,0 +1,24 @@
+=== COPIE NO POWERSHELL (uma linha por vez) ===
+
+$desk = [Environment]::GetFolderPath("Desktop")
+Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
+
+$git = "${env:ProgramFiles}\Git\bin\git.exe"
+
+& $git --version
+& $git config --global user.name "Carlos Eduardo Souza Silva"
+& $git config --global user.email "contato@inovatitech.com.br"
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1"
+
+=== SE O REPO JA EXISTIR NO GITHUB (kadu207) ===
+
+& $git remote add origin https://github.com/kadu207/system-api-sniffer.git
+& $git branch -M main
+& $git push -u origin main
+
+=== ADICIONAR GIT AO PATH (opcional, PowerShell como Admin) ===
+
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";${env:ProgramFiles}\Git\cmd", "User")
+# Feche e abra o PowerShell depois disso.
