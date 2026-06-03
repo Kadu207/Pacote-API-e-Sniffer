@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0] - 2026-06-03
+
+### Melhorias
+
+- Tabela de rotas com **caminho completo** (`/api/clientes/:id` = prefixo `app.use` + rota relativa)
+- Campos `path_full` e `router_var` no JSON de inventário
+
+## [1.2.0] - 2026-06-03
+
+### Melhorias
+
+- Detecta `*Router` (Express) e prefixos `app.use`
+
 ## [1.1.0] - 2026-06-03
 
 ### Melhorias

@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", "vendor", "__pycache__",
@@ -29,11 +29,12 @@ CODE_EXT = {
 
 OPENAPI_NAMES = {"openapi.yaml", "openapi.yml", "openapi.json", "swagger.yaml", "swagger.json"}
 
+EXPRESS_ROUTE_RE = re.compile(
+    r"\b(app|\w+Router)\.(get|post|put|patch|delete|all)\s*\(\s*['\"`]([^'\"`]+)",
+    re.I,
+)
+
 ROUTE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("express", re.compile(
-        r"\b(?:app|router|\w+Router)\.(get|post|put|patch|delete|all)\s*\(\s*['\"`]([^'\"`]+)",
-        re.I,
-    )),
     ("fastify", re.compile(r"\bfastify\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("hono", re.compile(r"\bapp\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("nestjs", re.compile(r"@(Get|Post|Put|Patch|Delete)\s*\(\s*['\"`]([^'\"`]*)['\"`]?", re.I)),
@@ -77,6 +78,8 @@ class ApiHit:
     line: int
     framework: str = ""
     note: str = ""
+    path_full: str = ""
+    router_var: str = ""
 
 
 @dataclass
@@ -121,6 +124,41 @@ def detect_stacks(files: list[Path]) -> list[str]:
     if "pom.xml" in names or "build.gradle" in names:
         stacks.append("java")
     return stacks or ["unknown"]
+
+
+def join_paths(prefix: str, sub: str) -> str:
+    if not prefix:
+        return sub or "/"
+    if sub in ("", "/"):
+        return prefix if prefix.startswith("/") else f"/{prefix}"
+    base = prefix.rstrip("/")
+    suffix = sub if sub.startswith("/") else f"/{sub}"
+    return f"{base}{suffix}"
+
+
+def build_mount_map(hits: list[ApiHit]) -> dict[str, str]:
+    mounts: dict[str, str] = {}
+    for h in hits:
+        if h.kind != "mount" or not h.note.startswith("router="):
+            continue
+        router = h.note.split("=", 1)[1].strip()
+        mounts[router] = h.path if h.path.startswith("/") else f"/{h.path}"
+    return mounts
+
+
+def resolve_full_paths(hits: list[ApiHit]) -> None:
+    mount_map = build_mount_map(hits)
+    for h in hits:
+        if h.kind != "route":
+            continue
+        if h.router_var and h.router_var in mount_map:
+            h.path_full = join_paths(mount_map[h.router_var], h.path)
+        elif h.path.startswith("/api") or h.path.startswith("/v1") or h.path.startswith("/v2"):
+            h.path_full = h.path
+        else:
+            h.path_full = h.path
+        if h.path != h.path_full:
+            h.note = f"rel={h.path}" + (f"; {h.note}" if h.note else "")
 
 
 def parse_route_match(fw: str, m: re.Match[str]) -> tuple[str, str]:
@@ -186,6 +224,22 @@ def scan_file(path: Path, root: Path, hits: list[ApiHit], warnings: list[str]) -
     scan_mounts(text, rel, hits)
 
     for i, line in enumerate(text.splitlines(), 1):
+        for m in EXPRESS_ROUTE_RE.finditer(line):
+            receiver, method, route = m.group(1), m.group(2), m.group(3)
+            method = (method or "GET").upper()
+            router_var = receiver if receiver != "app" else ""
+            hits.append(
+                ApiHit(
+                    "route",
+                    method,
+                    route or "/",
+                    rel,
+                    i,
+                    framework="express",
+                    router_var=router_var,
+                )
+            )
+
         for fw, pat in ROUTE_PATTERNS:
             for m in pat.finditer(line):
                 method, route = parse_route_match(fw, m)
@@ -204,10 +258,11 @@ def scan_file(path: Path, root: Path, hits: list[ApiHit], warnings: list[str]) -
 
 
 def dedupe_hits(hits: list[ApiHit]) -> list[ApiHit]:
-    seen: set[tuple[str, str, str, str, int]] = set()
+    seen: set[tuple[str, str, str, str, str, int]] = set()
     out: list[ApiHit] = []
     for h in hits:
-        key = (h.kind, h.method, h.path, h.file, h.line)
+        path_key = h.path_full or h.path
+        key = (h.kind, h.method, path_key, h.file, h.router_var, h.line)
         if key in seen:
             continue
         seen.add(key)
@@ -235,7 +290,7 @@ def render_markdown(result: ScanResult) -> str:
         "| Tipo | Quantidade |",
         "|------|------------|",
         f"| Prefixos montados (app.use) | {len(mounts)} |",
-        f"| Rotas no código | {len(routes)} |",
+        f"| Endpoints (caminho completo) | {len(routes)} |",
         f"| OpenAPI (arquivos + paths) | {len(specs)} |",
         f"| Clientes / URLs / env | {len(clients)} |",
         f"| GraphQL | {len(gql)} |",
@@ -252,15 +307,15 @@ def render_markdown(result: ScanResult) -> str:
 
     lines += [
         "",
-        "## APIs expostas (rotas)",
+        "## APIs expostas (caminho completo)",
         "",
-        "> Rotas em arquivos de router são relativas ao prefixo do `app.use` no index.",
-        "",
-        "| Método | Caminho | Framework | Arquivo | Linha |",
-        "|--------|---------|-----------|---------|-------|",
+        "| Método | Caminho completo | Router | Arquivo | Linha |",
+        "|--------|------------------|--------|---------|-------|",
     ]
-    for h in sorted(routes, key=lambda x: (x.path, x.method, x.file)):
-        lines.append(f"| {h.method} | `{h.path}` | {h.framework} | `{h.file}` | {h.line} |")
+    for h in sorted(routes, key=lambda x: (x.path_full or x.path, x.method)):
+        full = h.path_full or h.path
+        router = h.router_var or "app"
+        lines.append(f"| {h.method} | `{full}` | {router} | `{h.file}` | {h.line} |")
 
     if not routes:
         lines.append("| — | *Nenhuma rota detectada automaticamente* | — | — | — |")
@@ -337,6 +392,7 @@ def main() -> None:
     for f in files:
         scan_file(f, root, result.hits, result.warnings)
 
+    resolve_full_paths(result.hits)
     result.hits = dedupe_hits(result.hits)
 
     inv_path = out_dir / "api-inventory.json"
