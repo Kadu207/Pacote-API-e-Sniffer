@@ -1,101 +1,67 @@
 # Guia — Agentes Cursor + Pacote API e Sniffer
 
-**Repo (este pacote):** https://github.com/Kadu207/Pacote-API-e-Sniffer  
-**Scanner atual:** v1.3.x (`python scripts/scan-apis.py --version`)
+**Repo:** https://github.com/Kadu207/Pacote-API-e-Sniffer  
+**Escopo:** ferramenta multi-agente — **APIs** + **telas de aplicativos** (não versionar apps analisados aqui).
 
-Este repositório é **somente a ferramenta** de scan. O sistema analisado (ex.: um app em `C:\Users\carlo\Projects\...`) é outro projeto — o scanner grava saída em `{projeto}/docs/`, sem alterar código-fonte do alvo.
+## Princípio
 
-## Projetos separados (não misturar)
+| O quê | Onde fica |
+|-------|-----------|
+| Pacote (scanners, skills, guias) | Este repositório |
+| App analisado | Outro `--root`; saída só em `{app}/docs/` |
+| Site público | Você publica `api-catalog/` e `ui-catalog/` do app |
 
-| Projeto | Papel |
-|---------|--------|
-| **Pacote API e Sniffer** | Skill + `scan-apis.py` + scripts `.cmd`/`.ps1` |
-| **Sistema escaneado** (`--root`) | App real; recebe apenas `docs/api-inventory.json` e `docs/SYSTEM-API-DOCUMENTATION.md` |
-| **Contratos formais** (OpenAPI/GraphQL) | Seção do template / specs no inventário — não confundir com outros repositórios |
+Não commitar código de sistemas clientes no pacote. Não usar nomes de projetos reais como exemplo fixo na documentação.
 
-Não commitar nem editar o código do alvo salvo pedido explícito. Não assumir que `Dental_lab`, `dental-lab-system` ou outro nome no GitHub é o mesmo path local sem o usuário confirmar a URL.
+## Skills
 
-## Abrir a pasta (evita erro `Ãrea`)
+| Skill | Uso |
+|-------|-----|
+| `sniff-system-apis` | Endpoints, OpenAPI, clientes HTTP |
+| `sniff-app-screens` | Rotas de UI; browser para fluxos visuais |
+
+```powershell
+Copy-Item -Recurse -Force ".cursor\skills\sniff-system-apis" "$env:USERPROFILE\.cursor\skills\sniff-system-apis"
+Copy-Item -Recurse -Force ".cursor\skills\sniff-app-screens" "$env:USERPROFILE\.cursor\skills\sniff-app-screens"
+```
+
+## Scan completo (APIs + telas)
 
 ```powershell
 $desk = [Environment]::GetFolderPath("Desktop")
 Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
+.\ESCANEAR.cmd "C:\caminho\real\do\app-analisado"
 ```
 
-## Fluxo do agente (ordem)
+## Fluxo do agente
 
-1. Confirmar `--root` = pasta do **sistema a documentar** (não a pasta do Pacote, salvo smoke test).
-2. Executar o scanner (não inventar rotas):
-   ```powershell
-   .\ESCANEAR.cmd "C:\caminho\real\do\seu-projeto"
-   ```
-   Ou, com Python no PATH:
-   ```powershell
-   py -3 scripts\scan-apis.py --root "C:\caminho\real\do\seu-projeto" --out "C:\caminho\real\do\seu-projeto\docs"
-   ```
-   Se o pacote estiver em outro disco, use o caminho absoluto até `scripts/scan-apis.py` do clone [Pacote-API-e-Sniffer](https://github.com/Kadu207/Pacote-API-e-Sniffer).
-3. Ler `docs/api-inventory.json` e `docs/SYSTEM-API-DOCUMENTATION.md` **no projeto escaneado**.
-4. Validar no MD: `> Scanner: v1.3.x`, seção **Prefixos de API (app.use)**, tabela **APIs expostas (caminho completo)**.
-5. No JSON: `kind` (`mount` / `route`), `path_full`, `router_var`, `warnings`.
-6. Complementar manualmente: WebSocket, gRPC, tRPC, rotas 100% dinâmicas.
-7. Entregar resumo com stacks, totais, prefixos, rotas com **caminho completo**, alertas de segurança e caminhos dos arquivos.
+1. `--root` = pasta do **app** (front + back ou monorepo).
+2. `ESCANEAR.cmd` ou `scan-apis.py` + `scan-screens.py`.
+3. Conferir `docs/api-inventory.json` e `docs/ui-inventory.json`.
+4. Abrir `docs/api-catalog/index.html` e `docs/ui-catalog/index.html`.
+5. Enriquecer (handlers + telas no browser) — ver [GUIA-MULTI-AGENTES.md](GUIA-MULTI-AGENTES.md).
+6. Publicar — [PUBLICAR-WEB.md](PUBLICAR-WEB.md).
 
-## Skill global
-
-```powershell
-Copy-Item -Recurse -Force ".cursor\skills\sniff-system-apis" "$env:USERPROFILE\.cursor\skills\sniff-system-apis"
-```
-
-## Prompt Agent (copiar)
+## Prompt Agent
 
 ```
-Use a skill sniff-system-apis. Execute scan-apis.py na raiz DESTE repositório (sistema alvo).
-Gere docs/SYSTEM-API-DOCUMENTATION.md e resumo com stacks, totais, prefixos app.use,
-rotas com caminho completo (path_full no JSON) e alertas de segurança.
+Use sniff-system-apis e sniff-app-screens.
+Escaneie o repositório alvo (--root). Gere inventários em docs/.
+Resuma APIs (path_full, prefixos) e telas (rotas UI).
 Não altere código fora de docs/ salvo pedido explícito.
+Não inclua outros projetos neste pacote Sniffer.
 ```
 
-## Saída v1.3+ (o que conferir)
+## Saídas
 
-| Artefato | Conteúdo |
-|----------|----------|
-| `SYSTEM-API-DOCUMENTATION.md` | Tabela **Caminho completo** (ex. `GET /api/clientes/:id`) |
-| `api-inventory.json` | `path` (relativo no router), `path_full`, `router_var`, mounts com `note: router=...` |
-| `api-catalog/index.html` | Catálogo navegável (publicar no site) |
+| Artefato | Tipo |
+|----------|------|
+| `api-catalog/index.html` | Site — APIs |
+| `ui-catalog/index.html` | Site — telas |
+| `api-inventory.json` / `ui-inventory.json` | Dados para agentes |
 
-Template manual (complemento): `templates/SYSTEM-DOCUMENTATION.template.md` — a saída automática é `SYSTEM-API-DOCUMENTATION.md`.
+## Documentação
 
-## Git / push / validar (só neste pacote)
-
-```powershell
-.\VALIDAR.cmd
-.\PUSH.cmd
-```
-
-PowerShell com política de scripts bloqueada:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\VALIDAR.ps1"
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: sua alteração"
-```
-
-Git na sessão (sem alterar PATH permanente):
-
-```powershell
-. .\scripts\git-env.ps1
-```
-
-Para PATH permanente, prefira adicionar Git nas Configurações do Windows; evite `setx PATH` com `%PATH%` inteiro (pode truncar).
-
-## Multi-agente + site na web
-
-- [GUIA-MULTI-AGENTES.md](GUIA-MULTI-AGENTES.md) — 4 papéis (descoberta → enriquecimento → validação → publicação)
-- [PUBLICAR-WEB.md](PUBLICAR-WEB.md) — GitHub Pages, domínio próprio, outro PC
-
-## Documentação relacionada
-
-- [README.md](README.md) — início rápido e estrutura
-- [CHANGELOG.md](CHANGELOG.md) — versões do scanner
-- [GITHUB.md](GITHUB.md) — clone e push
-- [COMANDOS-PUSH.txt](COMANDOS-PUSH.txt) — comandos copiáveis
-- [CONTRIBUTING.md](CONTRIBUTING.md) — alterar o scanner ou a skill
+- [GUIA-MULTI-AGENTES.md](GUIA-MULTI-AGENTES.md)
+- [PUBLICAR-WEB.md](PUBLICAR-WEB.md)
+- [README.md](README.md) · [CHANGELOG.md](CHANGELOG.md)

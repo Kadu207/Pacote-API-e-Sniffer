@@ -1,9 +1,10 @@
 # Publicar catálogo de APIs na web
 
-Após o scan, o site estático fica em:
+Após o scan, os sites estáticos ficam em:
 
 ```
-{seu-projeto}/docs/api-catalog/index.html
+{app-analisado}/docs/api-catalog/index.html   # APIs
+{app-analisado}/docs/ui-catalog/index.html    # Telas / UI
 ```
 
 Abra no navegador (duplo clique) ou publique a pasta `api-catalog` (e opcionalmente `api-inventory.json`) em qualquer hospedagem estática.
@@ -13,7 +14,7 @@ Abra no navegador (duplo clique) ou publique a pasta `api-catalog` (e opcionalme
 1. No repo do **sistema** (não só o Pacote Sniffer), commit de `docs/`:
 
    ```powershell
-   git add docs/api-catalog docs/api-inventory.json docs/SYSTEM-API-DOCUMENTATION.md
+   git add docs/api-catalog docs/ui-catalog docs/api-inventory.json docs/ui-inventory.json docs/*.md
    git commit -m "docs: catálogo de APIs"
    git push
    ```

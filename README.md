@@ -1,81 +1,66 @@
 # Pacote API e Sniffer
 
-Pacote Cursor para **mapear APIs** em qualquer codebase e gerar **documentação** (rotas com caminho completo, prefixos `app.use`, OpenAPI, integrações HTTP, alertas básicos de segredos).
+Pacote **multi-agente** para Cursor: coleta objetiva de **APIs** (endpoints, integrações) e **telas** (rotas de UI / interface) de qualquer aplicativo, com saída em **arquivo** e **site estático** publicável.
 
 **Repositório:** https://github.com/Kadu207/Pacote-API-e-Sniffer
 
-> **Não é** o repositório do sistema escaneado. Use `--root` apontando para o app (ex. monorepo em `Projects\...`). O scanner só **escreve** em `{root}/docs/`.
+> Repositório **somente da ferramenta**. O app analisado é outro projeto (`--root`). Nada de código de sistemas clientes é versionado aqui.
+
+## O que o pacote faz
+
+| Camada | Scanner | Saída em `{app}/docs/` |
+|--------|---------|-------------------------|
+| **APIs** | `scan-apis.py` | `api-inventory.json`, `SYSTEM-API-DOCUMENTATION.md`, `api-catalog/` |
+| **Telas / UI** | `scan-screens.py` | `ui-inventory.json`, `UI-SCREENS-DOCUMENTATION.md`, `ui-catalog/` |
+
+Agentes no Cursor enriquecem (como cada endpoint/tela funciona) e publicam na web — ver [GUIA-MULTI-AGENTES.md](GUIA-MULTI-AGENTES.md).
 
 ## Estrutura
 
-| Pasta / arquivo | Função |
-|-----------------|--------|
-| `.cursor/skills/sniff-system-apis/` | Skill do Agent |
-| `scripts/scan-apis.py` | Scanner (v1.4.0) |
-| `scripts/git-env.ps1` | Git no PATH da sessão |
-| `ESCANEAR.cmd` | Scan com Python do AppData |
-| `INSTALAR-PYTHON.cmd` | Instala Python 3.12 via winget |
-| `CONFIGURAR-GIT-PATH.cmd` | Aviso + PATH (use com cuidado) |
-| `VALIDAR.ps1` / `VALIDAR.cmd` | Checagem local/remoto + smoke |
-| `PUSH-GITHUB.ps1` / `PUSH.cmd` | Commit + push deste pacote |
-| `GUIA-AGENTES.md` | Uso no Cursor (agentes) |
-| `GUIA-MULTI-AGENTES.md` | 4 agentes: coleta, enriquecimento, validação, web |
-| `PUBLICAR-WEB.md` | Publicar catálogo no seu site |
-| `templates/` | Template manual complementar |
+| Item | Função |
+|------|--------|
+| `.cursor/skills/sniff-system-apis/` | Skill — APIs |
+| `.cursor/skills/sniff-app-screens/` | Skill — telas / UI |
+| `scripts/scan-apis.py` | Scanner HTTP (v1.4.x) |
+| `scripts/scan-screens.py` | Scanner UI (v1.0.x) |
+| `ESCANEAR.cmd` | APIs + telas em um comando |
+| `GUIA-AGENTES.md` | Uso no Cursor |
+| `GUIA-MULTI-AGENTES.md` | Fluxo multi-agente |
+| `PUBLICAR-WEB.md` | Publicar catálogos no seu site |
 
-## Início rápido
+## Início rápido (qualquer PC)
 
 ```powershell
+git clone https://github.com/Kadu207/Pacote-API-e-Sniffer.git
+cd Pacote-API-e-Sniffer
+
 $desk = [Environment]::GetFolderPath("Desktop")
-Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
+# ou permaneça na pasta do clone
 
-# Se não tiver Python: .\INSTALAR-PYTHON.cmd (feche e abra o terminal depois)
-.\ESCANEAR.cmd "C:\caminho\real\do\seu-projeto"
+.\ESCANEAR.cmd "C:\caminho\real\do\app-analisado"
 ```
 
-*(Substitua `C:\caminho\real\do\seu-projeto` pelo path absoluto do sistema — não use o texto literal `caminho\do\projeto`.)*
-
-Ou manualmente (com Python no PATH):
-
-```powershell
-py -3 scripts\scan-apis.py --root "C:\caminho\real\do\seu-projeto" --out "C:\caminho\real\do\seu-projeto\docs"
-```
-
-### Saída (v1.3+)
-
-Em `{seu-projeto}/docs/`:
-
-- `api-inventory.json` — `path_full`, `router_var`, mounts (`kind: mount`)
-- `SYSTEM-API-DOCUMENTATION.md` — tabelas **Prefixos de API** e **Caminho completo** (`GET /api/...`)
-- `api-catalog/index.html` — **site** com busca (abra no navegador ou publique na web)
-
-## Cursor Agent
-
-Ver [GUIA-AGENTES.md](GUIA-AGENTES.md).
-
-```
-Use a skill sniff-system-apis. Escaneie este repositório (raiz do app) e gere a documentação de APIs em docs/.
-```
-
-Copiar skill globalmente:
+Copiar skills para o Cursor:
 
 ```powershell
 Copy-Item -Recurse -Force ".cursor\skills\sniff-system-apis" "$env:USERPROFILE\.cursor\skills\sniff-system-apis"
+Copy-Item -Recurse -Force ".cursor\skills\sniff-app-screens" "$env:USERPROFILE\.cursor\skills\sniff-app-screens"
 ```
 
-## Git (sem PATH configurado)
+## Prompt multi-agente (resumo)
 
-Se `.\VALIDAR.ps1` falhar por **política de execução**, use os `.cmd` ou `-ExecutionPolicy Bypass`:
+```
+Use sniff-system-apis e sniff-app-screens no --root do app.
+Rode ESCANEAR ou os dois scanners. Documente APIs (path_full) e telas (ui-inventory).
+Enriqueça comportamento e fluxos visuais; publique api-catalog e ui-catalog conforme PUBLICAR-WEB.md.
+Não misturar outros repositórios neste pacote.
+```
+
+## Git / validar
 
 ```powershell
 .\VALIDAR.cmd
 .\PUSH.cmd
-
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\VALIDAR.ps1"
-. .\scripts\git-env.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: sua mensagem"
 ```
 
-## Roadmap
-
-Ver [CHANGELOG.md](CHANGELOG.md), [GITHUB.md](GITHUB.md) e [CONTRIBUTING.md](CONTRIBUTING.md).
+Ver [CHANGELOG.md](CHANGELOG.md), [GITHUB.md](GITHUB.md), [CONTRIBUTING.md](CONTRIBUTING.md).

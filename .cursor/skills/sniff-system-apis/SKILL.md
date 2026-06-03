@@ -29,7 +29,9 @@ description: Mapeia endpoints HTTP, GraphQL, OpenAPI/Swagger e clientes de API e
 - Ignorar `node_modules`, `.git`, `dist`, `.cursor`, etc.
 - Saída automática: `docs/SYSTEM-API-DOCUMENTATION.md` (gerado pelo scanner).
 - Template manual complementar: `templates/SYSTEM-DOCUMENTATION.template.md`
-- Confirmar versão: `python scripts/scan-apis.py --version` (esperado 1.3.x)
+- Confirmar versão: `python scripts/scan-apis.py --version` (esperado 1.4.x)
+- Telas/UI: skill irmã `sniff-app-screens` + `scan-screens.py`
+- Não versionar projetos analisados neste repositório do pacote
 
 ## Referência
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.0] - 2026-06-03
+
+### Melhorias
+
+- **Scanner de telas** `scan-screens.py` + skill `sniff-app-screens`
+- `ESCANEAR.cmd` roda APIs + UI no mesmo comando
+- Documentação focada em pacote multi-agente (APIs + telas), sem projetos cliente no repo
+- Guia multi-agente com 6 papéis (API, UI, enriquecimento, validação, publicação)
+
 ## [1.4.0] - 2026-06-03
 
 ### Melhorias

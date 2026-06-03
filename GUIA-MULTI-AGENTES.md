@@ -1,102 +1,106 @@
-# Guia multi-agente — coleta completa de APIs
+# Guia multi-agente — APIs + telas de aplicativos
 
-Objetivo: **todos os endpoints**, **caminho completo**, **como funcionam** (parâmetros, auth, resposta), em **arquivo** e **site**, executável em qualquer PC com clone do pacote + Python.
+Pacote para **vários agentes** trabalharem de forma **objetiva**: coleta automática, enriquecimento, validação e publicação — **sem** misturar o código do app analisado neste repositório.
 
-## Arquitetura (4 papéis)
+## Arquitetura (6 papéis)
 
-| Agente | Foco | Entrada | Saída |
-|--------|------|---------|--------|
-| **1 — Descoberta** | Scan automático | `--root` do sistema | `docs/api-inventory.json`, MD, `docs/api-catalog/index.html` |
-| **2 — Enriquecimento** | Ler handlers em `arquivo:linha` | JSON de rotas | Notas por endpoint (body, query, auth, status) |
-| **3 — Validação** | Conferir omissões | Inventário + código | Lista de lacunas (WS, gRPC, tRPC, rotas dinâmicas) |
-| **4 — Publicação** | Site + portabilidade | `docs/api-catalog/` | URL pública + pacote de arquivos |
+| # | Agente | Foco | Saída principal |
+|---|--------|------|-----------------|
+| 1 | **Descoberta API** | `scan-apis.py` | `api-inventory.json`, `api-catalog/` |
+| 2 | **Descoberta telas** | `scan-screens.py` + browser opcional | `ui-inventory.json`, `ui-catalog/` |
+| 3 | **Enriquecimento API** | Ler handlers `arquivo:linha` | `ENDPOINTS-DETALHADOS.md` |
+| 4 | **Enriquecimento UI** | Browser / componentes | `TELAS-DETALHADAS.md` |
+| 5 | **Validação** | Lacunas (WS, modais, rotas dinâmicas) | Lista de gaps |
+| 6 | **Publicação** | Site + arquivos portáteis | URL + pasta `docs/` |
 
-Rode no **Cursor** com a skill `sniff-system-apis` ou prompts abaixo. Um único agente pode fazer as 4 fases em sequência; para projetos grandes, use **4 conversas** (uma por papel).
+Um agente pode rodar tudo em sequência; em apps grandes, **uma conversa por papel**.
 
 ---
 
-## Agente 1 — Descoberta (automático)
+## Agente 1 — Descoberta API
 
 ```powershell
 git clone https://github.com/Kadu207/Pacote-API-e-Sniffer.git
-cd Pacote-API-e-Sniffer
-.\ESCANEAR.cmd "C:\caminho\real\do\seu-projeto"
+.\ESCANEAR.cmd "C:\caminho\real\do\app-analisado"
 ```
 
 **Prompt:**
 
 ```
-Papel: Descoberta de APIs. Use sniff-system-apis.
-Execute scan na raiz do projeto alvo. Não invente rotas.
-Entregue totais (mounts, rotas, clientes, alertas) e confirme path_full em cada rota Express.
-Aponte docs/api-catalog/index.html para abrir no navegador.
+Papel: Descoberta API. Skill sniff-system-apis.
+Scan na raiz do app. Não inventar rotas. Confirmar path_full.
+Entregar totais e caminho docs/api-catalog/index.html.
 ```
 
 ---
 
-## Agente 2 — Enriquecimento (como funciona cada endpoint)
-
-O scanner não infere lógica de negócio. Este agente abre cada `arquivo:linha` da tabela e documenta:
-
-- Parâmetros (`:id`, query, body)
-- Middleware / auth
-- Resposta esperada (status, shape JSON)
-- Efeitos colaterais (DB, filas)
+## Agente 2 — Descoberta telas (sniffer de interface)
 
 **Prompt:**
 
 ```
-Papel: Enriquecimento. Leia docs/api-inventory.json (kind=route).
-Para cada endpoint, abra o arquivo na linha indicada e descreva comportamento em 2-4 linhas.
-Atualize docs/ENDPOINTS-DETALHADOS.md (crie se não existir) com seções por módulo/router.
-Não altere código de produção.
+Papel: Descoberta telas. Skill sniff-app-screens.
+Usar ui-inventory.json e ui-catalog/index.html.
+Se o app estiver rodando, use browser MCP para amostrar telas principais (título, formulários, ações).
+Não inventar rotas que não existam no inventário ou na navegação real.
+Atualizar docs/TELAS-RESUMO.md no app alvo se necessário.
 ```
 
 ---
 
-## Agente 3 — Validação
-
-**Prompt:**
+## Agente 3 — Enriquecimento API
 
 ```
-Papel: Validação. Compare api-inventory.json com busca manual por WebSocket, GraphQL, tRPC, app.use sem padrão, rotas em strings dinâmicas.
-Liste o que falta no inventário. Marque severidade (crítico / informativo).
-Não duplicar rotas já listadas com path_full.
+Papel: Enriquecimento API. docs/api-inventory.json (kind=route).
+Por endpoint: params, auth, resposta, efeitos. docs/ENDPOINTS-DETALHADOS.md no app alvo.
 ```
 
 ---
 
-## Agente 4 — Publicação (site + qualquer computador)
-
-| Canal | Como |
-|-------|------|
-| **Arquivos** | Copiar pasta `docs/` (JSON + MD + `api-catalog/`) |
-| **Site estático** | Publicar `docs/api-catalog/` — ver [PUBLICAR-WEB.md](PUBLICAR-WEB.md) |
-| **Outro PC** | Clone do pacote + `ESCANEAR.cmd` ou só abrir `index.html` + JSON |
-
-**Prompt:**
+## Agente 4 — Enriquecimento UI
 
 ```
-Papel: Publicação. Siga PUBLICAR-WEB.md para GitHub Pages ou hospedagem estática no domínio informado pelo usuário.
-Garanta que api-inventory.json e index.html fiquem acessíveis. Resuma URL final.
+Papel: Enriquecimento UI. ui-inventory.json + inspeção visual.
+Por tela: propósito, campos, APIs chamadas, perfis de acesso. docs/TELAS-DETALHADAS.md no app alvo.
 ```
 
 ---
 
-## Eficiência (regras para todos os agentes)
+## Agente 5 — Validação
 
-1. **Objetivo primeiro** — tabela de endpoints antes de texto longo.
-2. **Citar evidência** — `arquivo:linha` ou `path_full` do JSON.
-3. **Não misturar repos** — `--root` = só o sistema documentado.
-4. **Não editar** código do alvo salvo pedido explícito.
-5. **Re-scan** após mudanças grandes no código: repetir Agente 1.
+```
+Papel: Validação. Cruzar API + UI com busca manual (GraphQL, WebSocket, modais, iframe).
+Listar omissões com severidade. Não duplicar itens já inventariados.
+```
 
 ---
 
-## Limitações atuais do scanner
+## Agente 6 — Publicação
 
-- Coleta estática (regex); “como funciona” exige Agente 2.
-- Hono / rotas montadas de forma não padrão: revisão manual.
-- Mesmo `*Router` em vários `app.use`: só o último prefixo no `path_full`.
+| Canal | Conteúdo |
+|-------|----------|
+| Arquivos | `docs/*.json`, `*.md`, `api-catalog/`, `ui-catalog/` |
+| Site | [PUBLICAR-WEB.md](PUBLICAR-WEB.md) |
 
-Ver [CHANGELOG.md](CHANGELOG.md) e [GUIA-AGENTES.md](GUIA-AGENTES.md).
+```
+Papel: Publicação. Publicar api-catalog e ui-catalog no domínio informado pelo usuário.
+Entregar URLs finais e checklist de arquivos para outro PC.
+```
+
+---
+
+## Regras de eficiência
+
+1. Tabelas e JSON antes de prosa longa.
+2. Evidência: `arquivo:linha`, `path_full`, rota UI.
+3. `--root` = só o app analisado.
+4. **Nunca** versionar apps clientes dentro do repo Pacote-API-e-Sniffer.
+5. Re-scan após releases grandes.
+
+---
+
+## Limitações
+
+- API: regex estática; Hono/mounts complexos — revisão manual.
+- UI: modais e rotas dinâmicas — Agente 4 + browser.
+- “Como funciona” = Agentes 3 e 4, não o scanner sozinho.

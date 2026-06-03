@@ -15,25 +15,49 @@ if not exist "%ROOT%\." (
   exit /b 1
 )
 set "OUT=%ROOT%\docs"
-set "SCRIPT=%~dp0scripts\scan-apis.py"
+set "API=%~dp0scripts\scan-apis.py"
+set "UI=%~dp0scripts\scan-screens.py"
 
 if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" (
-  "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" "%SCRIPT%" --root "%ROOT%" --out "%OUT%"
-  goto :check
+  set "PY=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+  goto :run
 )
 if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" (
-  "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" "%SCRIPT%" --root "%ROOT%" --out "%OUT%"
+  set "PY=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+  goto :run
+)
+where py >nul 2>&1 && (
+  echo === APIs ===
+  py -3 "%API%" --root "%ROOT%" --out "%OUT%" || exit /b 1
+  echo.
+  echo === Telas / UI ===
+  py -3 "%UI%" --root "%ROOT%" --out "%OUT%"
   goto :check
 )
-where py >nul 2>&1 && py -3 "%SCRIPT%" --root "%ROOT%" --out "%OUT%" && goto :check
-where python >nul 2>&1 && python "%SCRIPT%" --root "%ROOT%" --out "%OUT%" && goto :check
-
+where python >nul 2>&1 && (
+  echo === APIs ===
+  python "%API%" --root "%ROOT%" --out "%OUT%" || exit /b 1
+  echo.
+  echo === Telas / UI ===
+  python "%UI%" --root "%ROOT%" --out "%OUT%"
+  goto :check
+)
 echo Python nao encontrado. Rode: INSTALAR-PYTHON.cmd
 exit /b 1
+
+:run
+echo === APIs ===
+"%PY%" "%API%" --root "%ROOT%" --out "%OUT%"
+if errorlevel 1 exit /b 1
+echo.
+echo === Telas / UI ===
+"%PY%" "%UI%" --root "%ROOT%" --out "%OUT%"
+goto :check
 
 :check
 if errorlevel 1 exit /b 1
 echo.
 echo Documentacao em: %OUT%
-echo Site local: %OUT%\api-catalog\index.html
+echo APIs:  %OUT%\api-catalog\index.html
+echo Telas: %OUT%\ui-catalog\index.html
 pause

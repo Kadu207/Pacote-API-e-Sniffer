@@ -2,8 +2,8 @@
 
 Manter o pacote alinhado a stacks modernas e ao Cursor (Skills, Agent).
 
-1. Atualize `scripts/scan-apis.py` e incremente `__version__` + `CHANGELOG.md`
-2. Ajuste `.cursor/skills/sniff-system-apis/SKILL.md` e `reference.md`
+1. Atualize `scripts/scan-apis.py` e/ou `scripts/scan-screens.py` + `CHANGELOG.md`
+2. Ajuste skills `sniff-system-apis` e `sniff-app-screens`
 3. Atualize `README.md`, `GUIA-AGENTES.md` e `templates/` se a saída mudar
 4. Teste:
    ```powershell

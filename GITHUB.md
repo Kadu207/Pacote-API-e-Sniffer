@@ -2,7 +2,7 @@
 
 URL: https://github.com/Kadu207/Pacote-API-e-Sniffer
 
-Este repositório contém **apenas o pacote scanner**. Documentação gerada em outros projetos fica no `{projeto}/docs/` daquele repositório.
+Este repositório contém **apenas o pacote** (scanners + skills + guias). Inventários de APIs e telas ficam no `{app}/docs/` de cada app analisado — nunca commitados aqui por padrão.
 
 ## Publicar alterações
 
