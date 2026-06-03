@@ -14,34 +14,50 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+__version__ = "1.1.0"
+
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", "vendor", "__pycache__",
     ".venv", "venv", ".next", "coverage", ".turbo", "target", "bin", "obj",
+    ".cursor", "terminals",
 }
 SKIP_EXT = {".min.js", ".map", ".lock", ".png", ".jpg", ".ico", ".woff", ".woff2"}
+CODE_EXT = {
+    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".java", ".kt", ".cs",
+    ".rb", ".php", ".rs", ".yaml", ".yml", ".json", ".graphql", ".gql",
+}
 
 OPENAPI_NAMES = {"openapi.yaml", "openapi.yml", "openapi.json", "swagger.yaml", "swagger.json"}
 
 ROUTE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("express", re.compile(r"\b(?:app|router)\.(get|post|put|patch|delete|all)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("fastify", re.compile(r"\bfastify\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
-    ("nestjs", re.compile(r"@(Get|Post|Put|Patch|Delete)\s*\(\s*['\"`]?([^'\"`)\s]*)", re.I)),
+    ("hono", re.compile(r"\bapp\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
+    ("nestjs", re.compile(r"@(Get|Post|Put|Patch|Delete)\s*\(\s*['\"`]([^'\"`]*)['\"`]?", re.I)),
     ("fastapi", re.compile(r"@(app|router)\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
-    ("flask", re.compile(r"@app\.route\s*\(\s*['\"`]([^'\"`]+)", re.I)),
+    ("flask", re.compile(r"@(?:app|bp)\.route\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("spring", re.compile(r"@(Get|Post|Put|Patch|Delete|Request)Mapping\s*\(\s*(?:value\s*=\s*)?['\"`]([^'\"`]+)", re.I)),
-    ("aspnet", re.compile(r"\[(Http(Get|Post|Put|Delete|Patch))\][^\n]*\n[^\n]*\[Route\s*\(\s*['\"`]([^'\"`]+)", re.I | re.M)),
-    ("minimal_api", re.compile(r"\bapp\.Map(Get|Post|Put|Delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
-    ("gin", re.compile(r"\b(?:r|router)\.(GET|POST|PUT|PATCH|DELETE)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
+    ("minimal_api", re.compile(r"\bapp\.Map(Get|Post|Put|Delete|Patch)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
+    ("gin", re.compile(r"\b(?:r|router|g)\.(GET|POST|PUT|PATCH|DELETE)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("go_http", re.compile(r"http\.HandleFunc\s*\(\s*['\"`]([^'\"`]+)", re.I)),
+    ("laravel", re.compile(r"Route::(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
 ]
 
 CLIENT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("fetch_url", re.compile(r"fetch\s*\(\s*['\"`](https?://[^'\"`]+)", re.I)),
     ("axios_url", re.compile(r"axios\.(?:get|post|put|delete|patch)\s*\(\s*['\"`](https?://[^'\"`]+)", re.I)),
+    ("axios_create", re.compile(r"axios\.create\s*\(\s*\{[^}]*baseURL\s*:\s*['\"`](https?://[^'\"`]+)", re.I | re.S)),
     ("requests_url", re.compile(r"requests\.(?:get|post|put|delete)\s*\(\s*['\"`](https?://[^'\"`]+)", re.I)),
+    ("httpx", re.compile(r"httpx\.(?:get|post|put|delete)\s*\(\s*['\"`](https?://[^'\"`]+)", re.I)),
     ("base_url", re.compile(r"baseURL\s*:\s*['\"`](https?://[^'\"`]+)", re.I)),
-    ("env_url", re.compile(r"(?:process\.env\.|os\.environ(?:\.get)?\(['\"]?)([A-Z][A-Z0-9_]*URL[A-Z0-9_]*)", re.I)),
+    ("env_url", re.compile(r"(?:process\.env\.|os\.(?:environ\.get|getenv)\(\s*['\"])([A-Z][A-Z0-9_]*(?:URL|_URI|_ENDPOINT)[A-Z0-9_]*)", re.I)),
 ]
+
+OPENAPI_PATH_RE = re.compile(r"^\s{2,}(/[A-Za-z0-9_./{}:-]+):\s*$", re.M)
+SECRET_RE = re.compile(
+    r"(?:api[_-]?key|secret|password|token)\s*[:=]\s*['\"][^'\"]{8,}['\"]",
+    re.I,
+)
 
 
 @dataclass
@@ -59,10 +75,10 @@ class ApiHit:
 class ScanResult:
     root: str
     scanned_at: str
+    scanner_version: str
     stacks: list[str] = field(default_factory=list)
     hits: list[ApiHit] = field(default_factory=list)
-    openapi_files: list[str] = field(default_factory=list)
-    graphql_files: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 def iter_files(root: Path) -> Iterable[Path]:
@@ -71,11 +87,14 @@ def iter_files(root: Path) -> Iterable[Path]:
             continue
         if any(part in SKIP_DIRS for part in p.parts):
             continue
-        if p.suffix.lower() in {".exe", ".dll", ".zip", ".pdf"}:
+        if p.suffix.lower() not in CODE_EXT and p.name.lower() not in OPENAPI_NAMES:
             continue
         if any(p.name.endswith(s) for s in SKIP_EXT):
             continue
-        if p.stat().st_size > 2_000_000:
+        try:
+            if p.stat().st_size > 2_000_000:
+                continue
+        except OSError:
             continue
         yield p
 
@@ -96,15 +115,46 @@ def detect_stacks(files: list[Path]) -> list[str]:
     return stacks or ["unknown"]
 
 
-def scan_file(path: Path, root: Path, hits: list[ApiHit]) -> None:
+def parse_route_match(fw: str, m: re.Match[str]) -> tuple[str, str]:
+    groups = m.groups()
+    if fw == "flask":
+        return "GET", groups[0] or "/"
+    if fw == "go_http":
+        return "GET", groups[0] or "/"
+    if len(groups) >= 2:
+        method, route = groups[0], groups[-1]
+    else:
+        method, route = "GET", groups[0] if groups else "/"
+    method = (method or "GET").upper()
+    if fw == "nestjs" and not route:
+        route = "/"
+    return method, route or "/"
+
+
+def scan_openapi_file(path: Path, root: Path, hits: list[ApiHit]) -> None:
     rel = str(path.relative_to(root)).replace("\\", "/")
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
         return
+    hits.append(ApiHit("openapi", "", rel, rel, 0, note="spec file"))
+    for m in OPENAPI_PATH_RE.finditer(text):
+        hits.append(ApiHit("openapi", "", m.group(1), rel, 0, framework="openapi-path"))
 
-    if path.name.lower() in OPENAPI_NAMES or "openapi" in path.parts:
-        hits.append(ApiHit("openapi", "", rel, rel, 0, note="spec file"))
+
+def scan_file(path: Path, root: Path, hits: list[ApiHit], warnings: list[str]) -> None:
+    rel = str(path.relative_to(root)).replace("\\", "/")
+
+    if path.name.lower() in OPENAPI_NAMES or (
+        path.suffix.lower() in {".yaml", ".yml", ".json"} and "openapi" in path.name.lower()
+    ):
+        scan_openapi_file(path, root, hits)
+        return
+
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return
 
     if path.suffix in {".graphql", ".gql"}:
         hits.append(ApiHit("graphql", "", rel, rel, 0, note="schema file"))
@@ -112,13 +162,8 @@ def scan_file(path: Path, root: Path, hits: list[ApiHit]) -> None:
     for i, line in enumerate(text.splitlines(), 1):
         for fw, pat in ROUTE_PATTERNS:
             for m in pat.finditer(line):
-                groups = m.groups()
-                if len(groups) >= 2:
-                    method, route = groups[0], groups[-1]
-                else:
-                    method, route = "GET", groups[0]
-                method = (method or "GET").upper()
-                hits.append(ApiHit("route", method, route or "/", rel, i, framework=fw))
+                method, route = parse_route_match(fw, m)
+                hits.append(ApiHit("route", method, route, rel, i, framework=fw))
 
         for kind, pat in CLIENT_PATTERNS:
             for m in pat.finditer(line):
@@ -128,12 +173,15 @@ def scan_file(path: Path, root: Path, hits: list[ApiHit]) -> None:
         if re.search(r"type\s+Query\s*\{", line) or re.search(r"type\s+Mutation\s*\{", line):
             hits.append(ApiHit("graphql", "", "inline schema", rel, i, note="graphql type"))
 
+        if SECRET_RE.search(line):
+            warnings.append(f"Possível segredo hardcoded: `{rel}:{i}`")
+
 
 def dedupe_hits(hits: list[ApiHit]) -> list[ApiHit]:
-    seen: set[tuple[str, str, str, str]] = set()
+    seen: set[tuple[str, str, str, str, int]] = set()
     out: list[ApiHit] = []
     for h in hits:
-        key = (h.kind, h.method, h.path, h.file)
+        key = (h.kind, h.method, h.path, h.file, h.line)
         if key in seen:
             continue
         seen.add(key)
@@ -151,16 +199,17 @@ def render_markdown(result: ScanResult) -> str:
         f"# Documentação de APIs — {Path(result.root).name}",
         "",
         f"> Gerado em: {result.scanned_at}",
+        f"> Scanner: v{result.scanner_version}",
         f"> Raiz: `{result.root}`",
-        f"> Stacks detectadas: {', '.join(result.stacks) or 'n/d'}",
+        f"> Stacks: {', '.join(result.stacks) or 'n/d'}",
         "",
         "## Resumo",
         "",
-        f"| Tipo | Quantidade |",
-        f"|------|------------|",
+        "| Tipo | Quantidade |",
+        "|------|------------|",
         f"| Rotas no código | {len(routes)} |",
-        f"| Chamadas / URLs externas | {len(clients)} |",
-        f"| Arquivos OpenAPI | {len(specs)} |",
+        f"| OpenAPI (arquivos + paths) | {len(specs)} |",
+        f"| Clientes / URLs / env | {len(clients)} |",
         f"| GraphQL | {len(gql)} |",
         "",
         "## APIs expostas (rotas)",
@@ -168,26 +217,48 @@ def render_markdown(result: ScanResult) -> str:
         "| Método | Caminho | Framework | Arquivo | Linha |",
         "|--------|---------|-----------|---------|-------|",
     ]
-    for h in sorted(routes, key=lambda x: (x.path, x.method)):
+    for h in sorted(routes, key=lambda x: (x.path, x.method, x.file)):
         lines.append(f"| {h.method} | `{h.path}` | {h.framework} | `{h.file}` | {h.line} |")
 
-    lines += ["", "## Integrações / clientes HTTP", "", "| URL / variável | Tipo | Arquivo | Linha |", "|----------------|------|---------|-------|"]
-    for h in clients:
+    if not routes:
+        lines.append("| — | *Nenhuma rota detectada automaticamente* | — | — | — |")
+
+    lines += [
+        "",
+        "## Integrações / clientes HTTP",
+        "",
+        "| URL / variável | Tipo | Arquivo | Linha |",
+        "|----------------|------|---------|-------|",
+    ]
+    for h in sorted(clients, key=lambda x: (x.path, x.file)):
         lines.append(f"| `{h.path}` | {h.framework} | `{h.file}` | {h.line} |")
 
     if specs:
-        lines += ["", "## Especificações OpenAPI/Swagger", ""]
-        for h in specs:
-            lines.append(f"- `{h.file}`")
+        lines += ["", "## OpenAPI / Swagger", ""]
+        for h in sorted(specs, key=lambda x: x.file):
+            extra = f" — `{h.path}`" if h.path and h.path != h.file else ""
+            lines.append(f"- `{h.file}` ({h.framework or h.note}){extra}")
 
     if gql:
         lines += ["", "## GraphQL", ""]
         for h in gql:
             lines.append(f"- `{h.file}` — {h.note or h.path}")
 
+    if result.warnings:
+        lines += ["", "## Alertas de segurança (revisar manualmente)", ""]
+        for w in result.warnings[:30]:
+            lines.append(f"- {w}")
+        if len(result.warnings) > 30:
+            lines.append(f"- ... e mais {len(result.warnings) - 30}")
+
     lines += [
         "",
-        "## Como atualizar",
+        "## Limitações",
+        "",
+        "- Rotas dinâmicas, middleware chains e RPC podem não aparecer.",
+        "- Revise manualmente WebSocket, gRPC, filas e BFFs.",
+        "",
+        "## Atualizar",
         "",
         "```powershell",
         f'python scripts/scan-apis.py --root "{result.root}" --out docs',
@@ -201,6 +272,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Mapeia APIs em um repositório")
     ap.add_argument("--root", required=True, help="Pasta raiz do sistema")
     ap.add_argument("--out", default="docs", help="Pasta de saída")
+    ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     args = ap.parse_args()
 
     root = Path(args.root).resolve()
@@ -209,18 +281,19 @@ def main() -> None:
 
     out_dir = Path(args.out)
     if not out_dir.is_absolute():
-        out_dir = Path.cwd() / out_dir
+        out_dir = (Path.cwd() / out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     files = list(iter_files(root))
     result = ScanResult(
         root=str(root),
         scanned_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        scanner_version=__version__,
         stacks=detect_stacks(files),
     )
 
     for f in files:
-        scan_file(f, root, result.hits)
+        scan_file(f, root, result.hits, result.warnings)
 
     result.hits = dedupe_hits(result.hits)
 
@@ -228,9 +301,11 @@ def main() -> None:
     doc_path = out_dir / "SYSTEM-API-DOCUMENTATION.md"
 
     payload = {
+        "scanner_version": __version__,
         "root": result.root,
         "scanned_at": result.scanned_at,
         "stacks": result.stacks,
+        "warnings": result.warnings,
         "counts": {
             "routes": sum(1 for h in result.hits if h.kind == "route"),
             "clients": sum(1 for h in result.hits if h.kind == "client"),
@@ -244,7 +319,8 @@ def main() -> None:
 
     print(f"OK: {inv_path}")
     print(f"OK: {doc_path}")
-    print(f"Rotas: {payload['counts']['routes']} | Clientes: {payload['counts']['clients']}")
+    c = payload["counts"]
+    print(f"Rotas: {c['routes']} | OpenAPI: {c['openapi']} | Clientes: {c['clients']} | Alertas: {len(result.warnings)}")
 
 
 if __name__ == "__main__":

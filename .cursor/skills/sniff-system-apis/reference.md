@@ -4,8 +4,9 @@
 
 - Express: `(app|router)\.(get|post|put|patch|delete|all)\(`
 - Fastify: `fastify\.(get|post|put|delete)`
-- NestJS: `@(Get|Post|Put|Patch|Delete|Controller)\(`
+- NestJS: `@(Get|Post|Put|Patch|Delete)\(`
 - Hono: `app\.(get|post)\(`
+- Laravel (PHP): `Route::(get|post)\(`
 - tRPC: `createTRPCRouter`, procedimentos em `routers/`
 
 ## Python

@@ -1,60 +1,23 @@
-# Publicar no GitHub
+# GitHub — Kadu207/Pacote-API-e-Sniffer
 
-## Pré-requisitos
+URL: https://github.com/Kadu207/Pacote-API-e-Sniffer
 
-1. Conta em [github.com](https://github.com)
-2. [Git](https://git-scm.com/) instalado
-3. [GitHub CLI](https://cli.github.com/) (`gh`) — opcional, mas facilita
-
-Autenticar o `gh` (uma vez):
+## Publicar alterações
 
 ```powershell
-gh auth login
+$desk = [Environment]::GetFolderPath("Desktop")
+Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
+powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: descreva a mudança"
 ```
 
-## Opção A — GitHub CLI (recomendado)
+## Clonar em outro PC
 
 ```powershell
-cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer"
-
-git init
-git add .
-git commit -m "Initial commit: Pacote API e Sniffer"
-
-gh repo create system-api-sniffer --public --source=. --remote=origin --push
+git clone https://github.com/Kadu207/Pacote-API-e-Sniffer.git
 ```
 
-Repositório privado:
+## Validar
 
 ```powershell
-gh repo create system-api-sniffer --private --source=. --remote=origin --push
+.\VALIDAR.ps1
 ```
-
-## Opção B — Site do GitHub (manual)
-
-1. GitHub → **New repository** → nome: `system-api-sniffer` → Create (sem README).
-2. No PC:
-
-```powershell
-cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer"
-git init
-git add .
-git commit -m "Initial commit: Pacote API e Sniffer"
-git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/system-api-sniffer.git
-git push -u origin main
-```
-
-## Atualizar depois
-
-```powershell
-cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer"
-git pull
-git add .
-git commit -m "feat: descreva a melhoria"
-git push
-```
-
-## Cursor
-
-Abra esta pasta no Cursor (`File → Open Folder`). Após `git pull`, o pacote fica atualizado.

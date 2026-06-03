@@ -1,34 +1,38 @@
-# Guia completo — Agentes Cursor e Pacote API Sniffer
+# Guia — Agentes Cursor + Pacote API Sniffer
 
-**Pasta do projeto:**
+**Repo:** https://github.com/Kadu207/Pacote-API-e-Sniffer
 
-`C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer`
-
----
-
-## Comandos essenciais
+## Abrir a pasta (evita erro `Ãrea`)
 
 ```powershell
-cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer"
-
-python scripts\scan-apis.py `
-  --root "C:\Users\carlo\Projects\SEU_PROJETO" `
-  --out "C:\Users\carlo\Projects\SEU_PROJETO\docs"
+$desk = [Environment]::GetFolderPath("Desktop")
+Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
 ```
 
-## Skill global no Cursor
+## Escanear outro sistema
 
 ```powershell
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills"
-Copy-Item -Recurse -Force `
-  "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer\.cursor\skills\sniff-system-apis" `
-  "$env:USERPROFILE\.cursor\skills\sniff-system-apis"
+python scripts\scan-apis.py --root "C:\Users\carlo\Projects\SEU_PROJETO" --out "C:\Users\carlo\Projects\SEU_PROJETO\docs"
 ```
 
-## Prompt no Agent
+## Skill global
+
+```powershell
+Copy-Item -Recurse -Force ".cursor\skills\sniff-system-apis" "$env:USERPROFILE\.cursor\skills\sniff-system-apis"
+```
+
+## Prompt Agent
 
 ```
-Use a skill sniff-system-apis. Execute scan-apis.py neste repositório e gere docs/SYSTEM-API-DOCUMENTATION.md.
+Use sniff-system-apis. Execute scan-apis.py na raiz deste repo. Gere docs/SYSTEM-API-DOCUMENTATION.md e resumo com stacks, totais e alertas de segurança.
 ```
 
-Ver README.md e GITHUB.md para detalhes completos.
+## Git / push / validar
+
+```powershell
+. .\scripts\git-env.ps1
+.\VALIDAR.ps1
+powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: minha alteracao"
+```
+
+Mais detalhes: [README.md](README.md), [CHANGELOG.md](CHANGELOG.md)

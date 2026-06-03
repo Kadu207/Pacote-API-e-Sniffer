@@ -1,36 +1,51 @@
-# System API Sniffer
+# Pacote API e Sniffer
 
-Pacote de agente para **mapear APIs** de qualquer codebase e gerar **documentação do sistema** (endpoints, integrações, OpenAPI, clientes HTTP).
+Pacote Cursor para **mapear APIs** em qualquer codebase e gerar **documentação** (rotas, OpenAPI, integrações HTTP, alertas básicos de segredos).
 
-Compatível com **Cursor Agent Skills**, atualizável via **GitHub** (clone / pull periódico).
+**Repositório:** https://github.com/Kadu207/Pacote-API-e-Sniffer
 
-## Publicar ou clonar do GitHub
+## Estrutura
 
-Passo a passo: **[GITHUB.md](GITHUB.md)**
-
-```powershell
-git clone https://github.com/Kadu207/Pacote-API-e-Sniffer.git
-```
+| Pasta / arquivo | Função |
+|-----------------|--------|
+| `.cursor/skills/sniff-system-apis/` | Skill do Agent |
+| `scripts/scan-apis.py` | Scanner (v1.1.0) |
+| `scripts/git-env.ps1` | Git no PATH da sessão |
+| `PUSH-GITHUB.ps1` | Commit + push |
+| `VALIDAR.ps1` | Checagem local/remoto |
+| `GUIA-AGENTES.md` | Uso no Cursor |
 
 ## Início rápido
 
 ```powershell
-cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer"
-python scripts\scan-apis.py --root "C:\caminho\do\seu\projeto" --out docs
+$desk = [Environment]::GetFolderPath("Desktop")
+Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
+
+python scripts\scan-apis.py --root "C:\caminho\do\projeto" --out docs
 ```
 
-Saída em `docs/`:
-- `api-inventory.json` — inventário estruturado
-- `SYSTEM-API-DOCUMENTATION.md` — documentação legível
+Saída: `docs/api-inventory.json` + `docs/SYSTEM-API-DOCUMENTATION.md`
 
-## Usar no Cursor
-
-1. Abra a pasta do **projeto alvo** (não só este repositório).
-2. Copie a skill para o projeto alvo **ou** referencie esta pasta no prompt.
-3. No chat do Agent, escreva:
+## Cursor Agent
 
 ```
-Use a skill sniff-system-apis. Analise este repositório, liste todas as APIs e gere a documentação em docs/.
+Use a skill sniff-system-apis. Escaneie este repositório e gere a documentação de APIs em docs/.
 ```
 
-Guia completo: [GUIA-AGENTES.md](GUIA-AGENTES.md)
+Copiar skill globalmente:
+
+```powershell
+Copy-Item -Recurse -Force ".cursor\skills\sniff-system-apis" "$env:USERPROFILE\.cursor\skills\sniff-system-apis"
+```
+
+## Git (sem PATH configurado)
+
+```powershell
+. .\scripts\git-env.ps1
+.\VALIDAR.ps1
+powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: sua mensagem"
+```
+
+## Roadmap
+
+Ver [CHANGELOG.md](CHANGELOG.md) e [CONTRIBUTING.md](CONTRIBUTING.md).

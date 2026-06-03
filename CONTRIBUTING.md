@@ -7,4 +7,4 @@ Manter o pacote alinhado a stacks modernas e ao Cursor (Skills, Agent).
 3. Teste: `python scripts/scan-apis.py --root "..\outro-projeto" --out docs\example-run`
 4. Commit e push no GitHub
 
-Tags: `v1.0.0`, `v1.1.0`, etc.
+Tags: `v1.0.0`, `v1.1.0`, etc. — https://github.com/Kadu207/Pacote-API-e-Sniffer/releases

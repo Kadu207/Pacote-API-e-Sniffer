@@ -1,24 +1,20 @@
-=== COPIE NO POWERSHELL (uma linha por vez) ===
-
+=== ABRIR PASTA (sem erro de acento) ===
 $desk = [Environment]::GetFolderPath("Desktop")
 Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
 
+=== GIT NA SESSAO ===
+. .\scripts\git-env.ps1
+
+=== VALIDAR ===
+.\VALIDAR.ps1
+
+=== COMMIT + PUSH ===
+powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: melhorias v1.1.0"
+
+=== PUSH MANUAL ===
 $git = "${env:ProgramFiles}\Git\bin\git.exe"
+& $git add -A
+& $git commit -m "sua mensagem"
+& $git push
 
-& $git --version
-& $git config --global user.name "Carlos Eduardo Souza Silva"
-& $git config --global user.email "contato@inovatitech.com.br"
-
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-powershell -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1"
-
-=== SE O REPO JA EXISTIR NO GITHUB (kadu207) ===
-
-& $git remote add origin https://github.com/Kadu207/Pacote-API-e-Sniffer.git
-& $git branch -M main
-& $git push -u origin main
-
-=== ADICIONAR GIT AO PATH (opcional, PowerShell como Admin) ===
-
-[Environment]::SetEnvironmentVariable("Path", $env:Path + ";${env:ProgramFiles}\Git\cmd", "User")
-# Feche e abra o PowerShell depois disso.
+Repo: https://github.com/Kadu207/Pacote-API-e-Sniffer

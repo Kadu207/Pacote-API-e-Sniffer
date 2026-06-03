@@ -1,35 +1,29 @@
 ---
 name: sniff-system-apis
-description: Mapeia endpoints HTTP, GraphQL, OpenAPI/Swagger e clientes de API em um repositório; gera inventário JSON e documentação Markdown do sistema. Use quando o usuário pedir para snifar/mapear APIs, documentar o sistema, inventário de rotas, ou análise de integrações.
+description: Mapeia endpoints HTTP, GraphQL, OpenAPI/Swagger e clientes de API em um repositório; gera inventário JSON e documentação Markdown. Use quando o usuário pedir para snifar/mapear APIs, documentar o sistema, inventário de rotas, ou análise de integrações.
 ---
 
 # Sniff System APIs
 
-## Objetivo
+## Fluxo
 
-Produzir documentação **completa e verificável** das APIs de um sistema a partir do código-fonte e de specs existentes.
-
-## Fluxo obrigatório
-
-1. **Confirmar raiz** — diretório do sistema (workspace atual ou path informado pelo usuário).
-2. **Rodar o scanner** (preferir script; não inventar endpoints):
+1. Confirmar `--root` (workspace ou path informado).
+2. Executar o scanner (não inventar rotas):
    ```bash
    python scripts/scan-apis.py --root "<RAIZ>" --out docs
    ```
-   No Windows, a partir deste pacote:
-   ```powershell
-   python "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer\scripts\scan-apis.py" --root "<RAIZ>" --out docs
-   ```
-3. **Ler saídas** — `docs/api-inventory.json` e `docs/SYSTEM-API-DOCUMENTATION.md`.
-4. **Complementar manualmente** (somente se o scanner não cobrir): rotas dinâmicas, env `*_URL`, gRPC/WebSocket.
-5. **Entregar ao usuário** resumo executivo, tabela de APIs, riscos, caminhos dos arquivos.
+   Se o pacote estiver em outro disco, use o caminho absoluto até `scripts/scan-apis.py` do clone [Pacote-API-e-Sniffer](https://github.com/Kadu207/Pacote-API-e-Sniffer).
+3. Ler `docs/api-inventory.json` e `docs/SYSTEM-API-DOCUMENTATION.md`.
+4. Complementar manualmente: WebSocket, gRPC, tRPC, rotas 100% dinâmicas.
+5. Entregar resumo, tabela por módulo, alertas de `warnings` no JSON, caminhos dos arquivos.
 
 ## Regras
 
-- **Nunca** misturar com outros projetos salvo pedido explícito.
-- Ignorar: `node_modules`, `.git`, `dist`, `build`, `vendor`, `__pycache__`, `.venv`.
-- Citar arquivo e linha quando adicionar endpoint manualmente.
+- Não misturar projetos (contratos, outros repos) salvo pedido explícito.
+- Ignorar `node_modules`, `.git`, `dist`, `.cursor`, etc.
+- Citar `arquivo:linha` para achados manuais.
+- Template: `templates/SYSTEM-DOCUMENTATION.template.md`
 
 ## Referência
 
-Padrões por framework: [reference.md](reference.md)
+Padrões por stack: [reference.md](reference.md)
