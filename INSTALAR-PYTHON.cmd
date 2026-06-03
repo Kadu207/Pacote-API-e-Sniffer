@@ -6,5 +6,6 @@ echo IMPORTANTE:
 echo 1. Feche este terminal e abra um NOVO PowerShell
 echo 2. Marque "Add python.exe to PATH" se o instalador perguntar
 echo 3. Teste: py -3 --version   ou   python --version
-echo 4. Escaneie: ESCANEAR.cmd "C:\Users\carlo\Projects\dental-lab-system"
+echo 4. Escaneie (substitua pelo caminho real do SEU projeto):
+echo    ESCANEAR.cmd "C:\caminho\real\do\seu-projeto"
 pause

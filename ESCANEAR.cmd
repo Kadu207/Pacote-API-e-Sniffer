@@ -1,5 +1,5 @@
 @echo off
-REM Uso: ESCANEAR.cmd "C:\caminho\do\projeto"
+REM Uso: ESCANEAR.cmd "C:\caminho\real\do\seu-projeto"  (nao use o texto literal de exemplo)
 setlocal
 cd /d "%~dp0"
 
@@ -9,6 +9,11 @@ if "%~1"=="" (
 )
 
 set "ROOT=%~1"
+if not exist "%ROOT%\." (
+  echo Raiz invalida ou pasta inexistente: %ROOT%
+  echo Use o caminho absoluto do projeto, ex.: C:\Users\carlo\Projects\meu-app
+  exit /b 1
+)
 set "OUT=%ROOT%\docs"
 set "SCRIPT=%~dp0scripts\scan-apis.py"
 

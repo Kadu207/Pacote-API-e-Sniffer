@@ -54,7 +54,11 @@ $py = Find-PythonExe
 if ($py) {
     $scan = Join-Path $PSScriptRoot "scripts\scan-apis.py"
     & $py.Exe @($py.Args + $scan, "--root", $PSScriptRoot, "--out", "$env:TEMP\sniffer-smoke")
-    if ($LASTEXITCODE -eq 0) { Write-Host "Scanner OK." -ForegroundColor Green }
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Scanner OK." -ForegroundColor Green
+    } else {
+        Write-Host "Scanner FALHOU (exit $LASTEXITCODE)." -ForegroundColor Red
+    }
 } else {
     Write-Host "Python nao encontrado (opcional). Instale: winget install Python.Python.3.12" -ForegroundColor Yellow
     Write-Host "Ou desative o alias da Microsoft Store em Configuracoes > Aplicativos > Aliases de execucao." -ForegroundColor Yellow

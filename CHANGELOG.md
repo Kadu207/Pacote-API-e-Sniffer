@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.1] - 2026-06-03
+
+### Melhorias
+
+- Documentação alinhada à v1.3.x: README, GUIA-AGENTES, skill, reference, template
+- Seção explícita **projetos separados** (pacote vs sistema escaneado)
+- Scanner: dedupe de mounts por router; linha nos `app.use`; sem duplicar Hono/`app.get`
+- `ESCANEAR.cmd`: valida se a pasta `--root` existe
+- `CONFIGURAR-GIT-PATH.cmd`: aviso sobre risco do `setx PATH`
+
 ## [1.3.0] - 2026-06-03
 
 ### Melhorias

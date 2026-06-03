@@ -5,13 +5,16 @@ Set-Location -LiteralPath (Join-Path $desk "Projetos DEV\Pacote API e Sniffer")
 === GIT NA SESSAO ===
 . .\scripts\git-env.ps1
 
-=== VALIDAR (se .\VALIDAR.ps1 der erro de politica, use um destes) ===
+=== VALIDAR (se .\VALIDAR.ps1 der erro de política, use um destes) ===
 VALIDAR.cmd
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\VALIDAR.ps1"
 
 === COMMIT + PUSH ===
 PUSH.cmd
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: melhorias v1.1.0"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\PUSH-GITHUB.ps1" -CommitMessage "feat: scanner v1.3.1 — docs e guia agentes"
+
+=== ESCANEAR OUTRO PROJETO (exemplo — substitua o caminho) ===
+.\ESCANEAR.cmd "C:\caminho\real\do\seu-projeto"
 
 === PUSH MANUAL ===
 $git = "${env:ProgramFiles}\Git\bin\git.exe"

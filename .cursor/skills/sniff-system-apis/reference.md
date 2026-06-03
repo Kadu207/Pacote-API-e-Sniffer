@@ -2,12 +2,19 @@
 
 ## Node / TypeScript
 
-- Express: `(app|router)\.(get|post|put|patch|delete|all)\(`
+- Express rotas: `(app|\w+Router)\.(get|post|put|patch|delete|all)\(`
+- Express mounts: `app\.use\s*\(\s*['\`]` + prefixo + `, nomeRouter`
 - Fastify: `fastify\.(get|post|put|delete)`
 - NestJS: `@(Get|Post|Put|Patch|Delete)\(`
-- Hono: `app\.(get|post)\(`
+- Hono: pode usar `app.get` — revisão manual se não aparecer como Express
 - Laravel (PHP): `Route::(get|post)\(`
 - tRPC: `createTRPCRouter`, procedimentos em `routers/`
+
+### Caminho completo (v1.3+)
+
+- `path` no JSON = trecho no arquivo (ex. `/:id`)
+- `path_full` = prefixo do `app.use` + `path` quando `router_var` está no mapa de mounts
+- Rotas em `app.get('/api/...')` já saem com caminho completo
 
 ## Python
 

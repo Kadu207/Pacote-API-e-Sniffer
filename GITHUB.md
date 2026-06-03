@@ -2,6 +2,8 @@
 
 URL: https://github.com/Kadu207/Pacote-API-e-Sniffer
 
+Este repositório contém **apenas o pacote scanner**. Documentação gerada em outros projetos fica no `{projeto}/docs/` daquele repositório.
+
 ## Publicar alterações
 
 ```powershell
@@ -19,5 +21,11 @@ git clone https://github.com/Kadu207/Pacote-API-e-Sniffer.git
 ## Validar
 
 ```powershell
-.\VALIDAR.ps1
+.\VALIDAR.cmd
 ```
+
+## Ver também
+
+- [GUIA-AGENTES.md](GUIA-AGENTES.md) — agentes Cursor
+- [COMANDOS-PUSH.txt](COMANDOS-PUSH.txt) — comandos copiáveis
+- [CONTRIBUTING.md](CONTRIBUTING.md) — alterar scanner/skill

@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 SKIP_DIRS = {
     "node_modules", ".git", "dist", "build", "vendor", "__pycache__",
@@ -36,7 +36,6 @@ EXPRESS_ROUTE_RE = re.compile(
 
 ROUTE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("fastify", re.compile(r"\bfastify\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
-    ("hono", re.compile(r"\bapp\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("nestjs", re.compile(r"@(Get|Post|Put|Patch|Delete)\s*\(\s*['\"`]([^'\"`]*)['\"`]?", re.I)),
     ("fastapi", re.compile(r"@(app|router)\.(get|post|put|patch|delete)\s*\(\s*['\"`]([^'\"`]+)", re.I)),
     ("flask", re.compile(r"@(?:app|bp)\.route\s*\(\s*['\"`]([^'\"`]+)", re.I)),
@@ -153,8 +152,6 @@ def resolve_full_paths(hits: list[ApiHit]) -> None:
             continue
         if h.router_var and h.router_var in mount_map:
             h.path_full = join_paths(mount_map[h.router_var], h.path)
-        elif h.path.startswith("/api") or h.path.startswith("/v1") or h.path.startswith("/v2"):
-            h.path_full = h.path
         else:
             h.path_full = h.path
         if h.path != h.path_full:
@@ -189,19 +186,20 @@ def scan_openapi_file(path: Path, root: Path, hits: list[ApiHit]) -> None:
 
 
 def scan_mounts(text: str, rel: str, hits: list[ApiHit]) -> None:
-    for m in MOUNT_RE.finditer(text):
-        prefix, router = m.group(1), m.group(2)
-        hits.append(
-            ApiHit(
-                "mount",
-                "",
-                prefix.rstrip("/"),
-                rel,
-                0,
-                framework="express-mount",
-                note=f"router={router}",
+    for i, line in enumerate(text.splitlines(), 1):
+        for m in MOUNT_RE.finditer(line):
+            prefix, router = m.group(1), m.group(2)
+            hits.append(
+                ApiHit(
+                    "mount",
+                    "",
+                    prefix.rstrip("/"),
+                    rel,
+                    i,
+                    framework="express-mount",
+                    note=f"router={router}",
+                )
             )
-        )
 
 
 def scan_file(path: Path, root: Path, hits: list[ApiHit], warnings: list[str]) -> None:
@@ -258,11 +256,14 @@ def scan_file(path: Path, root: Path, hits: list[ApiHit], warnings: list[str]) -
 
 
 def dedupe_hits(hits: list[ApiHit]) -> list[ApiHit]:
-    seen: set[tuple[str, str, str, str, str, int]] = set()
+    seen: set[tuple] = set()
     out: list[ApiHit] = []
     for h in hits:
-        path_key = h.path_full or h.path
-        key = (h.kind, h.method, path_key, h.file, h.router_var, h.line)
+        if h.kind == "mount":
+            key = (h.kind, h.path, h.file, h.note, h.line)
+        else:
+            path_key = h.path_full or h.path
+            key = (h.kind, h.method, path_key, h.file, h.router_var, h.line, h.framework)
         if key in seen:
             continue
         seen.add(key)
@@ -353,6 +354,8 @@ def render_markdown(result: ScanResult) -> str:
         "## Limitações",
         "",
         "- Rotas dinâmicas, middleware chains e RPC podem não aparecer.",
+        "- Hono e outros frameworks que usam `app.get` podem exigir revisão manual.",
+        "- Mesmo router em vários `app.use`: só o último prefixo é usado para `path_full`.",
         "- Revise manualmente WebSocket, gRPC, filas e BFFs.",
         "",
         "## Atualizar",
