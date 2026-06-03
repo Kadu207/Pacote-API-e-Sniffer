@@ -5,6 +5,25 @@ Set-Location -LiteralPath $PSScriptRoot
 $git = "${env:ProgramFiles}\Git\bin\git.exe"
 if (-not (Test-Path -LiteralPath $git)) { $git = "${env:ProgramFiles}\Git\cmd\git.exe" }
 
+function Find-PythonExe {
+    if (Get-Command py -ErrorAction SilentlyContinue) { return @{ Exe = "py"; Args = @("-3") } }
+    foreach ($name in @("python", "python3")) {
+        $cmd = Get-Command $name -ErrorAction SilentlyContinue
+        if ($cmd -and $cmd.Source -notlike "*WindowsApps*") { return @{ Exe = $cmd.Source; Args = @() } }
+    }
+    $roots = @(
+        "$env:LOCALAPPDATA\Programs\Python",
+        "$env:ProgramFiles\Python312",
+        "$env:ProgramFiles\Python311"
+    )
+    foreach ($root in $roots) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        $exe = Get-ChildItem -LiteralPath $root -Filter python.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($exe) { return @{ Exe = $exe.FullName; Args = @() } }
+    }
+    return $null
+}
+
 Write-Host "=== VALIDACAO LOCAL ===" -ForegroundColor Cyan
 if (-not (Test-Path -LiteralPath $git)) {
     Write-Host "Git nao encontrado." -ForegroundColor Red
@@ -31,13 +50,16 @@ if ($LASTEXITCODE -eq 0) {
 
 Write-Host ""
 Write-Host "=== SCANNER (smoke) ===" -ForegroundColor Cyan
-$py = Get-Command python -ErrorAction SilentlyContinue
+$py = Find-PythonExe
 if ($py) {
-    & python "$PSScriptRoot\scripts\scan-apis.py" --root $PSScriptRoot --out "$env:TEMP\sniffer-smoke"
+    $scan = Join-Path $PSScriptRoot "scripts\scan-apis.py"
+    & $py.Exe @($py.Args + $scan, "--root", $PSScriptRoot, "--out", "$env:TEMP\sniffer-smoke")
     if ($LASTEXITCODE -eq 0) { Write-Host "Scanner OK." -ForegroundColor Green }
 } else {
-    Write-Host "Python nao no PATH (opcional)." -ForegroundColor Yellow
+    Write-Host "Python nao encontrado (opcional). Instale: winget install Python.Python.3.12" -ForegroundColor Yellow
+    Write-Host "Ou desative o alias da Microsoft Store em Configuracoes > Aplicativos > Aliases de execucao." -ForegroundColor Yellow
 }
 
 Write-Host ""
 Write-Host "Repositorio: https://github.com/Kadu207/Pacote-API-e-Sniffer" -ForegroundColor Cyan
+Write-Host "Dica CMD no PowerShell: use .\VALIDAR.cmd (com ponto-barra)" -ForegroundColor DarkGray

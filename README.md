@@ -43,9 +43,9 @@ Copy-Item -Recurse -Force ".cursor\skills\sniff-system-apis" "$env:USERPROFILE\.
 Se `.\VALIDAR.ps1` falhar por **política de execução**, use os `.cmd` ou `-ExecutionPolicy Bypass`:
 
 ```powershell
-# Opcao 1 — duplo clique ou no terminal:
-VALIDAR.cmd
-PUSH.cmd
+# Opcao 1 — no PowerShell use .\ antes do nome:
+.\VALIDAR.cmd
+.\PUSH.cmd
 
 # Opcao 2 — PowerShell:
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\VALIDAR.ps1"
