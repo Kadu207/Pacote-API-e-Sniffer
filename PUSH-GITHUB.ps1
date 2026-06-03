@@ -1,7 +1,7 @@
 # Publicar no GitHub - usa caminho completo do Git (PATH nao obrigatorio)
 param(
-    [string]$RepoName = "system-api-sniffer",
-    [string]$GitHubUser = "kadu207",
+    [string]$RepoName = "Pacote-API-e-Sniffer",
+    [string]$GitHubUser = "Kadu207",
     [ValidateSet("public", "private")]
     [string]$Visibility = "public"
 )

@@ -9,7 +9,7 @@ Compatível com **Cursor Agent Skills**, atualizável via **GitHub** (clone / pu
 Passo a passo: **[GITHUB.md](GITHUB.md)**
 
 ```powershell
-git clone https://github.com/SEU_USUARIO/system-api-sniffer.git
+git clone https://github.com/Kadu207/Pacote-API-e-Sniffer.git
 ```
 
 ## Início rápido
