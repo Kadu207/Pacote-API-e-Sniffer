@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pacote API e Sniffer — Search API</title>
+  <style>
+    :root { --bg: #0f1419; --card: #1a2332; --text: #e7ecf3; --muted: #8b9cb3; --accent: #3b82f6; --ok: #22c55e; }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+    .sub { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+    input[type="text"] { width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid #334155; border-radius: 8px; background: #0b1020; color: var(--text); }
+    .row { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    button, .btn { cursor: pointer; border: none; border-radius: 8px; padding: 0.75rem 1.25rem; font-size: 1rem; font-weight: 600; text-decoration: none; display: inline-block; }
+    .primary { background: var(--accent); color: #fff; }
+    .secondary { background: #334155; color: var(--text); }
+    .card { background: var(--card); border-radius: 12px; padding: 1.25rem; margin-top: 1.5rem; border: 1px solid #243044; }
+    .card h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+    pre { background: #0b1020; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all; }
+    ol { padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; }
+    .hidden { display: none; }
+    .tag { display: inline-block; background: #243044; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; margin-right: 0.35rem; }
+    a { color: #93c5fd; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Pacote API e Sniffer</h1>
+    <p class="sub">Coleta multi-agente de APIs, endpoints e telas. Informe o alvo abaixo e inicie o fluxo <strong>Search API</strong>.</p>
+
+    <label for="target">Site, repositório ou pasta local</label>
+    <input id="target" type="text" placeholder="https://meu-app.com ou C:\Projects\meu-app ou https://github.com/org/repo" autocomplete="off">
+
+    <div class="row">
+      <button type="button" class="primary" id="btnSearch">Search API</button>
+      <a class="btn secondary" id="btnDownload" href="https://github.com/Kadu207/Pacote-API-e-Sniffer/archive/refs/heads/main.zip">Baixar pacote local (ZIP)</a>
+    </div>
+
+    <div id="plan" class="card hidden">
+      <h2>Plano de coleta</h2>
+      <p id="planType"></p>
+      <ol id="planSteps"></ol>
+    </div>
+
+    <div id="commands" class="card hidden">
+      <h2>Comandos no seu PC</h2>
+      <pre id="cmdBlock"></pre>
+    </div>
+
+    <div id="agents" class="card hidden">
+      <h2>Agentes Cursor (copie no chat Agent)</h2>
+      <p class="sub">Ordem rigorosa: descoberta API → telas → enriquecimento → validação.</p>
+      <pre id="promptBlock"></pre>
+    </div>
+
+    <div class="card">
+      <h2>Download e execução local</h2>
+      <ol>
+        <li>Baixe o <a href="https://github.com/Kadu207/Pacote-API-e-Sniffer/archive/refs/heads/main.zip">ZIP do pacote</a> ou <code>git clone</code>.</li>
+        <li>Instale <a href="https://www.python.org/downloads/">Python 3.12+</a> e <a href="https://git-scm.com/">Git</a>.</li>
+        <li>Copie as skills para <code>%USERPROFILE%\.cursor\skills\</code> (ver guia).</li>
+        <li>Rode <code>ESCANEAR.cmd "caminho-do-app"</code>.</li>
+        <li>Abra <code>docs\api-catalog\index.html</code> e <code>docs\ui-catalog\index.html</code>.</li>
+      </ol>
+      <p class="sub">Guia completo: <a href="../GUIA-PROCEDIMENTO-COMPLETO.md">GUIA-PROCEDIMENTO-COMPLETO.md</a> no repositório.</p>
+    </div>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function detectType(v) {
+      const t = v.trim();
+      if (!t) return "empty";
+      if (/^[a-zA-Z]:\\/.test(t) || t.startsWith("\\\\")) return "local";
+      if (/github\.com/i.test(t)) return "github";
+      if (/^https?:\/\//i.test(t)) return "url";
+      return "unknown";
+    }
+
+    function buildPlan(type, raw) {
+      const steps = [];
+      if (type === "local") {
+        steps.push("Validar que a pasta contém o código do sistema (front + API).");
+        steps.push("Executar ESCANEAR.cmd com esse caminho.");
+        steps.push("Abrir api-catalog e ui-catalog gerados em docs/.");
+        steps.push("No Cursor (pasta do app): rodar os 6 agentes do guia multi-agente.");
+      } else if (type === "github") {
+        steps.push("Clonar o repositório na sua máquina (git clone).");
+        steps.push("ESCANEAR.cmd apontando para a pasta clonada.");
+        steps.push("Agentes enriquecem endpoints e telas a partir do inventário JSON.");
+      } else if (type === "url") {
+        steps.push("URL de site no ar: inventário completo exige código local quando possível.");
+        steps.push("Agente 1–2: scan se houver repo; senão browser MCP na URL (rede + rotas visíveis).");
+        steps.push("Procurar /swagger, /api-docs, /openapi.json na URL informada.");
+        steps.push("Documentar em docs/ no projeto que você vincular ao Cursor.");
+      } else {
+        steps.push("Informe uma URL https://, link GitHub ou caminho Windows (C:\\...).");
+      }
+      return steps;
+    }
+
+    function buildCommands(type, raw) {
+      const v = raw.trim();
+      if (type === "local") {
+        return `cd "C:\\...\\Pacote API e Sniffer"\n.\\ESCANEAR.cmd "${v.replace(/"/g, '\\"')}"\nstart "${v}\\docs\\api-catalog\\index.html"\nstart "${v}\\docs\\ui-catalog\\index.html"`;
+      }
+      if (type === "github") {
+        const name = v.split("/").filter(Boolean).pop()?.replace(/\.git$/, "") || "app-clone";
+        return `cd $env:USERPROFILE\\Projects\ngit clone ${v} ${name}\ncd "..\\Pacote API e Sniffer"\n.\\ESCANEAR.cmd "$env:USERPROFILE\\Projects\\${name}"`;
+      }
+      if (type === "url") {
+        return `# Site: ${v}\n# 1) Clone o repo do sistema se existir, então ESCANEAR.cmd\n# 2) No Cursor (Agent), cole o prompt abaixo com esta URL`;
+      }
+      return "# Preencha o campo acima com URL, GitHub ou pasta local.";
+    }
+
+    function buildPrompt(type, raw) {
+      const target = raw.trim();
+      return `Search API — coleta rigorosa
+
+Alvo: ${target}
+Modo detectado: ${type}
+
+1) Use sniff-system-apis: scan ou revise docs/api-inventory.json (path_full em todas as rotas).
+2) Use sniff-app-screens: docs/ui-inventory.json e telas.
+3) Enriqueça: docs/ENDPOINTS-DETALHADOS.md (params, auth, resposta por endpoint).
+4) Enriqueça: docs/TELAS-DETALHADAS.md (fluxos, campos, APIs chamadas por tela).
+5) Valide: WebSocket, GraphQL, rotas dinâmicas, omissões.
+6) Não inventar rotas. Citar arquivo:linha. Não misturar outros repositórios.
+
+${type === "url" ? "Use browser MCP em " + target + " para chamadas de API observadas na rede." : ""}`;
+    }
+
+    $("btnSearch").addEventListener("click", () => {
+      const raw = $("target").value;
+      const type = detectType(raw);
+      const labels = { local: "Pasta local (scan completo)", github: "Repositório GitHub (clone + scan)", url: "Site publicado (browser + código se disponível)", empty: "—", unknown: "Formato não reconhecido" };
+
+      $("plan").classList.remove("hidden");
+      $("commands").classList.remove("hidden");
+      $("agents").classList.remove("hidden");
+      $("planType").innerHTML = `<span class="tag">${labels[type]}</span>`;
+      $("planSteps").innerHTML = buildPlan(type, raw).map((s) => `<li>${s}</li>`).join("");
+      $("cmdBlock").textContent = buildCommands(type, raw);
+      $("promptBlock").textContent = buildPrompt(type, raw);
+    });
+  </script>
+</body>
+</html>

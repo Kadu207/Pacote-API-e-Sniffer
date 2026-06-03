@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0] - 2026-06-03
+
+### Melhorias
+
+- Integração **API Harvester** (Lovable) em `harvester/` — TanStack Start fullstack
+- Documentação Lovable em `docs/API-HARVESTER-LOVABLE.md`
+- Arquitetura/pipeline fase construção, `portal/`, CI harvester lint
+
 ## [1.5.0] - 2026-06-03
 
 ### Melhorias

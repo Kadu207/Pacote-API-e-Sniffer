@@ -37,6 +37,16 @@ Para servir na raiz do Pages, copie `index.html` para `docs/index.html` ou confi
 
 3. **Nginx / Apache:** `root` apontando para a pasta `api-catalog`.
 
+## Portal central (campo URL + Search API)
+
+Publique a pasta `portal/` do pacote na raiz do seu domínio (ex.: `https://docs.seudominio.com/`).
+
+- Campo para colar URL do site, GitHub ou caminho `C:\...`
+- Botão **Search API** → plano, comandos PowerShell e prompt para os agentes Cursor
+- Botão **Baixar pacote local** → ZIP do GitHub
+
+O scan pesado continua no PC do usuário (ou em servidor futuro); o portal orquestra o procedimento.
+
 ## Opção C — Site que você já direciona
 
 Se você tem um site (WordPress, portal InovatiTech, etc.):

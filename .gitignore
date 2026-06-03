@@ -6,3 +6,17 @@ venv/
 .DS_Store
 docs/example-run/
 example-run/
+node_modules/
+dist/
+build/
+.next/
+.env
+.env.local
+backend/.venv/
+frontend/.env*
+harvester/node_modules/
+harvester/dist/
+harvester/.output/
+harvester/.env
+harvester/.env.local
+harvester/.env.production

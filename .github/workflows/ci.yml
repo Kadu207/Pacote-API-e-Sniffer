@@ -8,18 +8,44 @@ on:
   schedule:
     - cron: "0 12 * * 1"
 
+# Fase construção: valida só o próprio repositório (core + portal).
+# Jobs backend/frontend serão adicionados após integração Lovable.
+
 jobs:
-  lint-and-smoke:
+  core-scanners:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Syntax check scanner
-        run: python -m py_compile scripts/scan-apis.py
-      - name: Smoke scan (self)
+      - name: Syntax check scanners
+        run: |
+          python -m py_compile scripts/scan-apis.py
+          python -m py_compile scripts/scan-screens.py
+      - name: Smoke scan APIs (self only)
         run: |
           python scripts/scan-apis.py --root . --out /tmp/sniffer-out
           test -f /tmp/sniffer-out/api-inventory.json
           test -f /tmp/sniffer-out/SYSTEM-API-DOCUMENTATION.md
+          test -f /tmp/sniffer-out/api-catalog/index.html
+      - name: Smoke scan UI (self only)
+        run: |
+          python scripts/scan-screens.py --root . --out /tmp/sniffer-out
+          test -f /tmp/sniffer-out/ui-inventory.json
+          test -f /tmp/sniffer-out/ui-catalog/index.html
+      - name: Portal static file present
+        run: test -f portal/index.html
+
+  harvester-lint:
+    needs: core-scanners
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: harvester
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+    continue-on-error: true
