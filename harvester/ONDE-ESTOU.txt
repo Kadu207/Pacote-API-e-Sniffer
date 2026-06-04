@@ -1,0 +1,21 @@
+COMO SABER ONDE VOCE ESTA
+=======================
+
+Olhe o FINAL do prompt PowerShell:
+
+  ...\Pacote API e Sniffer\harvester>     <- VOCE JA ESTA EM HARVESTER
+  ...\harvester\dist\server>              <- VOCE ESTA EM DIST\SERVER
+
+NAO RODE "cd harvester" se o prompt ja termina com \harvester>
+
+Comandos (prompt ...\harvester>):
+  .\DEPLOY-COM-TOKEN.cmd
+  .\VER-DEPLOYS.cmd
+  .\DEV.cmd
+  notepad .env.cloudflare
+
+Subir para a raiz do pacote:
+  cd ..
+
+Entrar em dist\server:
+  cd dist\server

@@ -1,0 +1,53 @@
+# Deploy producao: https://scouttapi.inovatitech.com.br
+# Secrets no repositorio: Settings -> Secrets and variables -> Actions
+
+name: Deploy scouttapi
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "harvester/**"
+      - ".github/workflows/deploy-scouttapi.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-scouttapi
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: harvester
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build (Nitro / Cloudflare)
+        run: bun run build
+
+      - name: Remove wrangler state (evita conflito com dist/server)
+        run: rm -rf .wrangler
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bunx wrangler deploy --cwd dist/server --route "scouttapi.inovatitech.com.br/*"
+
+      - name: Sync Worker secrets (app)
+        if: ${{ secrets.LOVABLE_API_KEY != '' && secrets.FIRECRAWL_API_KEY != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LOVABLE_API_KEY: ${{ secrets.LOVABLE_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: |
+          printf '%s' "$LOVABLE_API_KEY" | bunx wrangler secret put LOVABLE_API_KEY --cwd dist/server
+          printf '%s' "$FIRECRAWL_API_KEY" | bunx wrangler secret put FIRECRAWL_API_KEY --cwd dist/server

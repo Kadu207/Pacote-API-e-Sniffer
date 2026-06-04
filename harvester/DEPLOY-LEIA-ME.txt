@@ -1,0 +1,26 @@
+Deploy Cloudflare (scouttapi.inovatitech.com.br)
+==========================================
+
+O wrangler.json VALIDO e gerado pelo build:
+  dist\server\wrangler.json
+
+NAO crie wrangler.jsonc na raiz harvester (causa erro no wrangler login).
+
+Comandos:
+  .\DEPLOY-CLOUDFLARE.cmd
+
+Ou:
+  bun run build
+  cd dist\server
+  bun x wrangler login
+  .\DEPLOY.cmd   (usa Bun, nao precisa de Node no PATH)
+
+Ou manual em dist\server (remove .wrangler da raiz harvester antes):
+  cd dist\server
+  bun x wrangler deploy --route "scouttapi.inovatitech.com.br/*"
+
+Sem --route o wrangler pode pedir subdominio workers.dev e sair sem mensagem clara.
+
+Secrets (dashboard ou CLI):
+  LOVABLE_API_KEY
+  FIRECRAWL_API_KEY

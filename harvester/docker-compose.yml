@@ -1,0 +1,29 @@
+# Dev local isolado (evita OneDrive). Deploy producao: GitHub Actions ou DEPLOY-COM-TOKEN.cmd
+services:
+  harvester:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - harvester_node_modules:/app/node_modules
+      - harvester_vite_cache:/tmp/scouttapi-harvester-vite-temp
+    command: ["bun", "run", "dev"]
+
+  build:
+    profiles: ["build"]
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - harvester_node_modules:/app/node_modules
+    command: ["bun", "run", "build"]
+
+volumes:
+  harvester_node_modules:
+  harvester_vite_cache:

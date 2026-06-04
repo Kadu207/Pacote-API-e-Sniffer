@@ -10,16 +10,48 @@ Documentação completa: [docs/API-HARVESTER-LOVABLE.md](../docs/API-HARVESTER-L
 
 ## Desenvolvimento local
 
-Requisitos: [Bun](https://bun.sh) (recomendado) ou Node 22+.
+Requisitos: [Bun](https://bun.sh) (recomendado) ou Node 22+ com npm.
 
-```bash
+### Windows (sem Bun no PATH)
+
+```powershell
 cd harvester
+.\INSTALAR-BUN.cmd
+# Feche e abra um NOVO terminal
+.\DEV.cmd
+```
+
+Ou manualmente:
+
+```powershell
+copy .env.example .env
+# Edite .env: LOVABLE_API_KEY, FIRECRAWL_API_KEY
 bun install
-cp .env.example .env   # quando existir; ver config.server.ts
 bun run dev
 ```
 
-Variáveis típicas (Lovable): Firecrawl, AI Gateway — ver `src/lib/config.server.ts`.
+Alternativa: `npm install` + `npm run dev` se tiver Node.js completo no PATH (não só o node do Cursor).
+
+**Onde pegar as chaves:** [docs/CHAVES-API.md](../docs/CHAVES-API.md) (Firecrawl + Lovable AI Gateway).
+
+### Docker (dev isolado)
+
+```powershell
+.\DOCKER-DEV.cmd
+# http://localhost:8080
+```
+
+Ver [docs/DEPLOY-CI-DOCKER.md](../docs/DEPLOY-CI-DOCKER.md).
+
+## Deploy em producao (scouttapi)
+
+| Metodo | Comando / acao |
+|--------|----------------|
+| **CI GitHub** (recomendado) | Push em `main` + secret `CLOUDFLARE_API_TOKEN` |
+| API Token local | `.\DEPLOY-COM-TOKEN.cmd` (`.env.cloudflare`) |
+| OAuth / manual | `.\DEPLOY-CLOUDFLARE.cmd` |
+
+Ver deploys: `.\VER-DEPLOYS.cmd`
 
 ## Integração com o core Python (futuro)
 

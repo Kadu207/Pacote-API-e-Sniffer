@@ -1,0 +1,45 @@
+Login Cloudflare (Wrangler) — scouttapi
+======================================
+
+RECOMENDADO (sem OAuth):
+  - Deploy automatico: GitHub Actions (docs\DEPLOY-CI-DOCKER.md)
+  - Deploy manual: DEPLOY-COM-TOKEN.cmd + .env.cloudflare
+
+O site em producao NAO depende do login local para funcionar.
+
+OAuth deu timeout?
+------------------
+1. Rode de novo (voce ja esta em dist\server se o prompt termina com dist\server>):
+   WRANGLER-LOGIN.cmd
+   (ou: bun x wrangler login)
+
+2. Quando o navegador abrir, faca login e AUTORIZE rapido (menos de 2 min).
+
+3. Nao feche a janela do terminal ate aparecer "Successfully logged in".
+
+4. Se falhar de novo:
+   - Desative VPN/proxy
+   - Permita localhost:8976 no firewall
+   - Tente outro navegador padrao
+
+Alternativa: API Token (mais estavel)
+-------------------------------------
+1. Cloudflare Dashboard -> Perfil -> API Tokens -> Create Token
+2. Template "Edit Cloudflare Workers" ou permissao Workers Scripts Read/Write
+3. No PowerShell (sessao atual):
+   $env:CLOUDFLARE_API_TOKEN = "seu-token-aqui"
+4. Depois:
+   .\VER-DEPLOYS.cmd
+
+Listar deploys SEM login interativo
+-----------------------------------
+Se ja logou antes, VER-DEPLOYS usa o token salvo em:
+  %APPDATA%\xdg.config\.wrangler\config\default.toml
+
+Token expira (expiration_time no arquivo). Renove com WRANGLER-LOGIN.cmd.
+
+Voce JA ESTA em dist\server?
+----------------------------
+Prompt: ...\harvester\dist\server>
+  NAO rode: cd dist\server
+  Para voltar ao harvester: cd ..\..

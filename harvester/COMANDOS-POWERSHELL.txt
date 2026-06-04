@@ -1,0 +1,52 @@
+Pacote API e Sniffer — caminhos reais (NAO use "..." no cd)
+================================================================
+
+Raiz do pacote:
+  cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer"
+
+Harvester (app Lovable):
+  cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer\harvester"
+
+Deploy (wrangler):
+  cd "C:\Users\carlo\OneDrive\Área de Trabalho\Projetos DEV\Pacote API e Sniffer\harvester\dist\server"
+
+Se voce esta em dist\server e quer voltar:
+  cd ..\..          rem -> harvester
+  cd ..\..\..       rem -> raiz do pacote
+
+Scripts por pasta
+-----------------
+Raiz do pacote:     HARVESTER-DEV.cmd
+Harvester:          DEV.cmd, DOCKER-DEV.cmd, DEPLOY-COM-TOKEN.cmd (API Token, sem OAuth)
+                    DEPLOY-CLOUDFLARE.cmd, DEPLOY.cmd, VER-DEPLOYS.cmd
+                    CI: push main + secret CLOUDFLARE_API_TOKEN (docs\DEPLOY-CI-DOCKER.md)
+dist\server:        DEPLOY.cmd (so republica; precisa build antes)
+                    cd ..\..  para voltar ao harvester
+
+Bun (WinGet):
+  $bun = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Oven-sh.Bun_Microsoft.Winget.Source_8wekyb3d8bbwe\bun-windows-x64\bun.exe"
+
+Deploy manual (apos bun run build na pasta harvester):
+  cd dist\server
+  .\DEPLOY.cmd
+  (ou DEPLOY-CLOUDFLARE.cmd para build+deploy; usa Bun, sem Node no PATH)
+
+Ver deploys (recomendado — ignora WRANGLER_LOG=error do terminal):
+  .\VER-DEPLOYS.cmd
+
+PowerShell equivalente:
+  $bun = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Oven-sh.Bun_Microsoft.Winget.Source_8wekyb3d8bbwe\bun-windows-x64\bun.exe"
+  Remove-Item Env:WRANGLER_LOG -ErrorAction SilentlyContinue
+  & $bun scripts\list-deploys.mjs
+
+Evite WRANGLER_LOG=error — esconde a saida do wrangler no PowerShell.
+
+wrangler deployments list --json no PowerShell pode parecer vazio; use list-deploys.mjs.
+Versoes sao derivadas dos deploys (1 chamada API, mais estavel).
+
+PowerShell em dist\server — apague harvester\.wrangler antes se der conflito:
+  Remove-Item -Recurse -Force "..\..\.wrangler" -ErrorAction SilentlyContinue
+  & $bun x wrangler deploy --route "scouttapi.inovatitech.com.br/*"
+
+Se wrangler deploy sem --route falhar: registre workers.dev OU use a rota acima.
+Worker no dashboard: kadu207-pacote-api-e-sniffer-harvester
